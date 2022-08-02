@@ -1,4 +1,4 @@
-# init
+# w3ns-frontend
 
 ## Project setup
 ```

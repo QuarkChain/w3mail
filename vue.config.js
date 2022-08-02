@@ -1,5 +1,13 @@
-const { defineConfig } = require('@vue/cli-service')
-module.exports = defineConfig({
-  transpileDependencies: true,
+module.exports = {
+  configureWebpack:{
+    optimization: {
+      splitChunks: {
+        minSize: 1024000,
+        maxSize: 1024000,
+      }
+    }
+  },
+  productionSourceMap: false,
   publicPath: '/w3mail.w3q/',
-})
+  runtimeCompiler: true,
+};

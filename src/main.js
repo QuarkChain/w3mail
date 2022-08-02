@@ -1,12 +1,12 @@
-import Vue from 'vue'
+import Vue from 'vue';
 // import the library
 import Element from 'element-ui';
 import AsyncComputed from 'vue-async-computed';
 import { Navbar } from 'buefy';
 
+import App from './App.vue'
 import router from './router';
 import store from './store';
-import App from './App.vue'
 
 import 'element-ui/lib/theme-chalk/index.css';
 import './assets/css/all.css';
@@ -24,3 +24,4 @@ new Vue({
   store,
   render: h => h(App),
 }).$mount('#app')
+

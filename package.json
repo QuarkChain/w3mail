@@ -1,6 +1,6 @@
 {
   "name": "w3mail",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -11,7 +11,6 @@
     "bignumber.js": "^9.0.0",
     "buefy": "^0.9.17",
     "clipboard-copy": "^4.0.1",
-    "core-js": "^3.8.3",
     "element-ui": "^2.15.6",
     "ethers": "^5.5.4",
     "futoin-hkdf": "^1.3.3",
@@ -19,21 +18,21 @@
     "sass": "^1.26.10",
     "sass-loader": "^9.0.2",
     "uuid": "^8.3.2",
-    "vue": "^2.6.14",
+    "vue": "^2.6.11",
     "vue-async-computed": "^3.9.0",
     "vue-router": "^3.2.0",
-    "vuex": "^4.0.2",
+    "vuex": "^3.4.0",
     "web3": "^1.3.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.16",
-    "@babel/eslint-parser": "^7.12.16",
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-eslint": "~5.0.0",
-    "@vue/cli-service": "~5.0.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^8.0.3",
-    "vue-template-compiler": "^2.6.14"
+    "@vue/cli-plugin-babel": "~4.5.7",
+    "@vue/cli-plugin-eslint": "~4.5.7",
+    "@vue/cli-service": "~4.5.7",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "vue-template-compiler": "^2.6.11",
+    "w3q-deployer": "^1.4.3"
   },
   "eslintConfig": {
     "root": true,
@@ -45,7 +44,7 @@
       "eslint:recommended"
     ],
     "parserOptions": {
-      "parser": "@babel/eslint-parser"
+      "parser": "babel-eslint"
     },
     "rules": {}
   },
