@@ -8,7 +8,6 @@
       Connect
     </button>
     <div v-else class="user">
-      <div v-if="this.driveKey" class="favorite" @click.stop="goProfile"/>
       <div class="account">
         {{ this.accountShort }}
         &nbsp;|&nbsp;
@@ -121,8 +120,8 @@ export default {
 
       const c = chains.find((v) => v.chainID === chainID);
       this.setChainConfig(JSON.parse(JSON.stringify(c)));
-      this.currentAccount = accounts[0];
       this.setAccount(accounts[0]);
+      this.currentAccount = accounts[0];
     },
     async login() {
       window.ethereum
@@ -170,9 +169,6 @@ export default {
         return false
       }
     },
-    goProfile(){
-      this.$router.push({path: "/address"});
-    }
   },
 };
 </script>

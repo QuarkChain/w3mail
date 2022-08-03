@@ -2,31 +2,30 @@
   <div class="home">
     <img class="home-logo" src="../assets/home.png"/>
     <p class="message">
-      Your Private Hard Drive on Blockchain
+      Your web3 email<br/>
+      Send, encrypt and receive email with wallet
     </p>
 
-    <w3q-deployer v-if="driveKey" multiple :fileContract="contract" :driveKey="this.driveKey" style="width: 500px"/>
-    <div v-else class="drive">
+    <!--  register  -->
+    <div v-if="driveKey">
       <el-input placeholder="Input Password" v-model="input" show-password></el-input>
-      <el-button v-if="drive&&drive.uuid!=='none'" type="warning" round class="home-btn" @click="openDrive">
-        Enter Drive
-      </el-button>
-      <el-button v-else type="warning" round class="home-btn" @click="onCreateDrive">
-        Create Drive
+      <el-button type="warning" round class="home-btn" @click="openEmail">
+        Enter
       </el-button>
     </div>
+    <el-button v-else type="warning" round class="home-btn" @click="onCreateEmail">
+      Try it now
+    </el-button>
   </div>
 </template>
 
 <script>
 import { mapActions } from "vuex";
 import { v4 as uuidv4} from 'uuid';
-import W3qDeployer from '@/components/w3q-deployer.vue';
-import {getDrive, login, createDrive, encryptDrive} from '@/utils/dirve/w3drive';
+import {getDrive, login, encryptDrive} from '@/utils/dirve/w3drive';
 
 export default {
   name: 'Home',
-  components: {W3qDeployer},
   data: () => {
     return {
       driveUuid: undefined,
@@ -73,32 +72,19 @@ export default {
       if (this.drive && !this.driveKey) {
         this.driveUuid = 'none' === this.drive.uuid ? uuidv4() : this.drive.uuid;
         this.signature = await login(this.driveUuid, this.account, 3334);
+
+        // const publicKey = await getPublicKey(this.account);
+        // console.log("publickey", publicKey.toString('base64'));
+        // const encryptData = encryptEmailKey(publicKey, publicKey);
+        // console.log("encry", encryptData.toString('base64'));
+        // const key = await decryptEmailKey(this.account, encryptData);
+        // console.log('key', key.toString('base64'));
       }
     },
-    async onCreateDrive() {
-      const password = this.input;
-      if (!password) {
-        this.$message.error('Password Error');
-        return;
-      }
-
-      if (!this.signature) {
-        await this.signatureLogin();
-        if (!this.signature) {
-          this.$message.error('Failed to create drive');
-        }
-      }
-
-      const driveKey = await createDrive(this.contract, this.driveUuid, this.signature, password);
-      if (driveKey) {
-        this.setDriveKey(driveKey);
-        sessionStorage.setItem(this.account, driveKey);
-        this.$notify({title: 'Transaction', message: "Create Drive Success", type: 'success'});
-      } else {
-        this.$message.error('Failed to create drive');
-      }
+    async onCreateEmail() {
+      this.$router.push({path: "/register"});
     },
-    async openDrive() {
+    async openEmail() {
       const password = this.input;
       if (!password) {
         this.$message.error('Password Error');
@@ -134,20 +120,14 @@ export default {
 
 .home-logo {
   margin-top: 35px;
+  width: 230px;
 }
 
 .message {
-  font-size: 23px;
+  font-size: 30px;
   color: #333333;
   margin-bottom: 35px;
   margin-top: 35px;
-}
-
-.drive{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  margin-top: 10px;
 }
 
 .home-btn {
