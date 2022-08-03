@@ -7,7 +7,7 @@
     </p>
 
     <!--  register  -->
-    <div v-if="driveKey">
+    <div v-if="this.email && this.email.email !== 'none'">
       <el-input placeholder="Input Password" v-model="input" show-password></el-input>
       <el-button type="warning" round class="home-btn" @click="openEmail">
         Enter
@@ -21,14 +21,12 @@
 
 <script>
 import { mapActions } from "vuex";
-import { v4 as uuidv4} from 'uuid';
-import {getDrive, login, encryptDrive} from '@/utils/dirve/w3drive';
+import {getEmailInfo, signInfo, encryptDrive} from '@/utils/w3mail';
 
 export default {
   name: 'Home',
   data: () => {
     return {
-      driveUuid: undefined,
       signature: undefined,
       input: "",
     }
@@ -36,24 +34,22 @@ export default {
   computed: {
     contract() {
       if (this.$store.state.chainConfig && this.$store.state.chainConfig.chainID) {
-        const {FileBoxController} = this.$store.state.chainConfig;
-        return FileBoxController;
+        const {EmailController} = this.$store.state.chainConfig;
+        return EmailController;
       }
       return null;
     },
     account() {
       return this.$store.state.account;
     },
-    driveKey() {
-      return this.$store.state.driveKey;
-    }
   },
   asyncComputed: {
-    drive: {
+    email: {
       async get() {
         if (this.account) {
-          const {FileBoxController} = this.$store.state.chainConfig;
-          return await getDrive(FileBoxController);
+          const email = await getEmailInfo(this.contract, this.account);
+          this.setEmail(email);
+          return email;
         }
         return undefined;
       },
@@ -61,27 +57,9 @@ export default {
       watch: ['account']
     },
   },
-  watch: {
-    drive: async function () {
-      await this.signatureLogin();
-    }
-  },
   methods: {
-    ...mapActions(["setDriveKey"]),
-    async signatureLogin() {
-      if (this.drive && !this.driveKey) {
-        this.driveUuid = 'none' === this.drive.uuid ? uuidv4() : this.drive.uuid;
-        this.signature = await login(this.driveUuid, this.account, 3334);
-
-        // const publicKey = await getPublicKey(this.account);
-        // console.log("publickey", publicKey.toString('base64'));
-        // const encryptData = encryptEmailKey(publicKey, publicKey);
-        // console.log("encry", encryptData.toString('base64'));
-        // const key = await decryptEmailKey(this.account, encryptData);
-        // console.log('key', key.toString('base64'));
-      }
-    },
-    async onCreateEmail() {
+    ...mapActions(["setDriveKey", "setEmail"]),
+    onCreateEmail() {
       this.$router.push({path: "/register"});
     },
     async openEmail() {
@@ -92,20 +70,22 @@ export default {
       }
 
       if (!this.signature) {
-        await this.signatureLogin();
+        this.signature = await signInfo(this.account, this.email.publicKey, 3334);
         if (!this.signature) {
-          this.$message.error('Failed to open drive');
+          this.$message.error('Failed to enter email');
+          return;
         }
       }
 
-      const driveKey = await encryptDrive(this.signature, password, this.drive.iv, this.drive.encrypt);
+      const driveKey = await encryptDrive(this.signature, password, this.email.encrypt, this.email.iv);
       if (driveKey) {
         this.setDriveKey(driveKey);
         sessionStorage.setItem(this.account, driveKey);
+        this.$router.push({path: "/email"});
       } else {
         this.$message.error('Password Error');
       }
-    }
+    },
   },
 }
 </script>

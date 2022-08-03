@@ -1,11 +1,11 @@
 import { encrypt } from '@metamask/eth-sig-util';
-import {deriveDriveKey, driveEncrypt} from "@/utils/dirve/w3crypto";
+import {deriveDriveKey, driveDecrypt, driveEncrypt} from "@/utils/dirve/w3crypto";
 import {FileContract} from "@/utils/contract";
 import {ethers} from "ethers";
 const ascii85 = require('ascii85');
 
 const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
-// const hexToString = (h) => ethers.utils.toUtf8String(h);
+const hexToString = (h) => ethers.utils.toUtf8String(h);
 
 function createSignMessage(address, publicKey, networkId) {
     return `W3Mail wants you to sign in with your Ethereum account:\n${address}\n\n`+
@@ -13,6 +13,18 @@ function createSignMessage(address, publicKey, networkId) {
         + 'Version: 1\n'
         + `Chain ID: ${networkId}\n`
         + `Nonce: ${publicKey}`;
+}
+
+export async function getEmailInfo(controller, account) {
+    const fileContract = FileContract(controller);
+    const result = await fileContract.getUserInfo(account);
+    const publicKey = result.publicKey.substr(2, result.publicKey.length - 1);
+    return {
+        email: result.email !== "0x" ? hexToString(result.email) : 'none',
+        publicKey: Buffer.from(publicKey, 'hex').toString('base64'),
+        encrypt: result.encryptData !== "0x" ? result.encryptData : 'none',
+        iv: result.iv !== "0x" ? hexToString(result.iv) : 'none',
+    }
 }
 
 export async function getPublicKey(account) {
@@ -53,7 +65,6 @@ export async function register(controller, publicKey, signature, email, password
     const iv = stringToHex(driveEncryptData.cipherIV);
 
     publicKey = '0x' + Buffer.from(publicKey, 'base64').toString('hex');
-    console.log(publicKey)
     email = stringToHex(email);
     const fileContract = FileContract(controller);
     const tx = await fileContract.register(publicKey, email, hexData, iv);
@@ -64,6 +75,19 @@ export async function register(controller, publicKey, signature, email, password
     return "";
 }
 
+//
+export async function encryptDrive(signature, password, encryptData, iv) {
+    // create key
+    const rootKey = await deriveDriveKey(signature, password);
+    encryptData = encryptData.substr(2, encryptData.length - 1);
+    const data = Buffer.from(encryptData, 'hex');
+    try {
+        await driveDecrypt(iv, rootKey, data);
+        return rootKey;
+    } catch (e) {
+        return undefined;
+    }
+}
 
 // publicKey: Buffer, data: Buffer
 export function encryptEmailKey(publicKey, data) {

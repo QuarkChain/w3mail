@@ -36,7 +36,7 @@
           </el-carousel-item>
           <el-carousel-item>
             <div class="card-item">
-              <p class="item-title">Register Mail</p>
+              <p class="item-title">Register W3Mail</p>
               <el-input class="item-input" placeholder="Input Email" v-model="email">
                 <template slot="append">@w3mail.com</template>
               </el-input>
@@ -102,6 +102,10 @@ export default {
       }
     },
     async onRegister() {
+      if (!this.contract) {
+        return;
+      }
+
       const email = this.email;
       if (!email) {
         this.$message.error('Email Error');
@@ -121,7 +125,8 @@ export default {
       const emailKey = await register(this.contract, this.publicKey, this.signature, email, password);
       if(emailKey) {
         sessionStorage.setItem(this.account, emailKey);
-        // this.$router.push({path: "/register"});
+        this.setDriveKey(emailKey);
+        this.$router.push({path: "/email"});
       } else {
         this.$message.error('Register Fail!');
       }
