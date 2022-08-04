@@ -3,6 +3,7 @@ import {deriveDriveKey, deriveFileKey, driveDecrypt, driveEncrypt, fileEncrypt} 
 import {FileContract} from "@/utils/contract";
 import {ethers} from "ethers";
 import {v4 as uuidv4} from "uuid";
+import BigNumber from "bignumber.js";
 const ascii85 = require('ascii85');
 
 const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
@@ -26,6 +27,17 @@ export async function getEmailInfo(controller, account) {
         encrypt: result.encryptData !== "0x" ? result.encryptData : 'none',
         iv: result.iv !== "0x" ? hexToString(result.iv) : 'none',
     }
+}
+
+export async function getPublicKeyByEmail(controller, email) {
+    const fileContract = FileContract(controller);
+    email = stringToHex(email);
+    const result = await fileContract.getPublicKeyByEmail(email);
+    if (new BigNumber(result).toNumber() === 0) {
+        return undefined;
+    }
+    const publicKey = result.substr(2, result.length - 1);
+    return Buffer.from(publicKey, 'hex').toString('base64');
 }
 
 export async function getPublicKey(account) {
@@ -124,11 +136,11 @@ export async function sendEmail(controller, driveKey, publicKey, toEmail, title,
     // create key
     const emailUuid = uuidv4();
     const emailKey = await deriveFileKey(driveKey, emailUuid);
-
-    // encrypt email key
+    // encrypt email key by receive user public key
     const encryptKey = encryptEmailKey(publicKey, emailKey);
     // encrypt content
     const encryptResult = await fileEncrypt(emailKey, message);
+    // data
     const encryptContent = Buffer.concat([
         encryptKey, // 126
         Buffer.from(encryptResult.cipherIV, 'base64'), // 12
@@ -142,8 +154,7 @@ export async function sendEmail(controller, driveKey, publicKey, toEmail, title,
     }
 
     const hexUuid = stringToHex(emailUuid);
-    const emailName = toEmail.split("@");
-    const hexToEmail = stringToHex(emailName[0]);
+    const hexToEmail = stringToHex(toEmail);
     const hexTitle = stringToHex(title);
     const hexData = '0x' + encryptContent.toString('hex');
     const fileContract = FileContract(controller);

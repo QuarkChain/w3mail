@@ -23,7 +23,7 @@ import { mavonEditor } from 'mavon-editor';
 import W3qDeployer from '@/components/w3q-deployer.vue';
 import validator from "email-validator";
 import 'mavon-editor/dist/css/index.css';
-import {sendEmail} from "@/utils/w3mail";
+import {getPublicKeyByEmail, sendEmail} from "@/utils/w3mail";
 
 export default {
   name: 'Email',
@@ -66,16 +66,13 @@ export default {
     driveKey() {
       return this.$store.state.driveKey;
     },
-    email() {
-      return this.$store.state.email;
-    },
   },
   methods: {
     onChange(msg) {
       this.message = msg;
     },
     async onSend() {
-      if (!this.driveKey || !this.email || !this.message) {
+      if (!this.driveKey || !this.message) {
         return;
       }
 
@@ -88,10 +85,23 @@ export default {
         return;
       }
       if (!validator.validate(this.to) || !this.to.endsWith("w3mail.com")) {
-        this.$message.error('Invalid email address');
+        this.$message.error('Invalid receive email');
         return;
       }
-      await sendEmail(this.contract, this.driveKey, this.email.publicKey, this.to, this.subject, this.message);
+      const values = this.to.split("@");
+      const toEmail = values[0];
+      const publicKey = await getPublicKeyByEmail(this.contract, toEmail);
+      if(!publicKey){
+        this.$message.error('Invalid receive email');
+        return;
+      }
+
+      const result = await sendEmail(this.contract, this.driveKey, publicKey, toEmail, this.subject, this.message);
+      if (result) {
+        this.$notify({title: 'Send Email', message: 'Send Success',type: 'success'});
+      } else {
+        this.$notify.error({title: 'Send Email', message: 'Send fail!',type: 'success'});
+      }
     },
   },
 }

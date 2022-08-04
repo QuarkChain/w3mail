@@ -7,6 +7,7 @@ const FileContractInfo = {
         "function removes(bytes[] memory uuids) public",
 
         "function emailList(bytes memory email) public view returns(address)",
+        "function getPublicKeyByEmail(bytes memory email) public view returns(bytes32 publicKey)",
         "function getUserInfo(address user) public view returns(bytes32 publicKey,bytes memory email,bytes memory encryptData,bytes memory iv)",
         "function getFileInfos() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory names,bytes[] memory types)",
         "function getFileInfo(bytes memory uuid) public view returns(uint256 realChunkCount,uint256 chunkCount,uint256 time,bytes memory name,bytes memory fileType,bytes memory iv)",
