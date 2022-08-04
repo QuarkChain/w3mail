@@ -12,6 +12,7 @@ const FileContractInfo = {
         "function getFileInfo(bytes memory uuid) public view returns(uint256 realChunkCount,uint256 chunkCount,uint256 time,bytes memory name,bytes memory fileType,bytes memory iv)",
         "function getFile(bytes memory uuid, uint256 chunkId) public view returns(bytes memory)",
         "function register(bytes32 publicKey, bytes memory email, bytes memory encryptData, bytes memory iv) public",
+        "function sendEmail(bytes memory toEmail,bytes memory uuid,bytes memory title,bytes calldata encryptData,bytes memory fileId) public payable",
     ],
 };
 

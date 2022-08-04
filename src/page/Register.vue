@@ -80,7 +80,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(["setDriveKey"]),
+    ...mapActions(["setDriveKey","setEmail"]),
     async questPublicKey() {
       const key = await getPublicKey(this.account);
       if (key) {
@@ -124,6 +124,13 @@ export default {
       }
       const emailKey = await register(this.contract, this.publicKey, this.signature, email, password);
       if(emailKey) {
+        const emailInfo =  {
+            email: email,
+            publicKey: this.publicKey,
+            encrypt: "0x",
+            iv: "0x",
+        }
+        this.setEmail(emailInfo);
         sessionStorage.setItem(this.account, emailKey);
         this.setDriveKey(emailKey);
         this.$router.push({path: "/email"});

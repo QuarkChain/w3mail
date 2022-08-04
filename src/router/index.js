@@ -2,8 +2,7 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Home from '../page/Home.vue';
 import Register from '../page/Register.vue';
-
-import File from '../components/File.vue';
+import Email from '../page/Email.vue';
 
 Vue.use(VueRouter);
 
@@ -19,9 +18,9 @@ const routes = [
     component: Register,
   },
   {
-    path: '/file/:uuid',
-    name: 'File',
-    component: File,
+    path: '/email',
+    name: 'Email',
+    component: Email,
   },
 ];
 

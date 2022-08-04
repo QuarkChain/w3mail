@@ -9,7 +9,7 @@
           <Header/>
         </el-header>
 
-        <el-main :style="'min-height:'+ (fullHeight-195) +'px;'">
+        <el-main :style="'min-height:'+ (fullHeight-165) +'px;'">
           <router-view :key="$route.fullPath" />
         </el-main>
 
@@ -94,8 +94,8 @@ export default {
 }
 
 .footer {
-  padding: 30px !important;
-  height: 95px !important;
+  padding: 15px !important;
+  height: 65px !important;
   background: transparent;
 }
 

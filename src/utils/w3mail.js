@@ -1,7 +1,8 @@
 import { encrypt } from '@metamask/eth-sig-util';
-import {deriveDriveKey, driveDecrypt, driveEncrypt} from "@/utils/dirve/w3crypto";
+import {deriveDriveKey, deriveFileKey, driveDecrypt, driveEncrypt, fileEncrypt} from "@/utils/dirve/w3crypto";
 import {FileContract} from "@/utils/contract";
 import {ethers} from "ethers";
+import {v4 as uuidv4} from "uuid";
 const ascii85 = require('ascii85');
 
 const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
@@ -75,7 +76,6 @@ export async function register(controller, publicKey, signature, email, password
     return "";
 }
 
-//
 export async function encryptDrive(signature, password, encryptData, iv) {
     // create key
     const rootKey = await deriveDriveKey(signature, password);
@@ -89,12 +89,13 @@ export async function encryptDrive(signature, password, encryptData, iv) {
     }
 }
 
-// publicKey: Buffer, data: Buffer
-export function encryptEmailKey(publicKey, data) {
+// email send & receive
+// publicKey: base64, data: Buffer|string : return Buffer
+function encryptEmailKey(publicKey, data) {
     // Returned object contains 4 properties: version, ephemPublicKey, nonce, ciphertext
     // Each contains data encoded using base64, version is always the same string
     const enc = encrypt({
-        publicKey: publicKey.toString('base64'),
+        publicKey: publicKey,
         data: ascii85.encode(data).toString(),
         version: 'x25519-xsalsa20-poly1305',
     });
@@ -118,6 +119,48 @@ export function encryptEmailKey(publicKey, data) {
     // Return just the Buffer to make the function directly compatible with decryptData function
     return buf;
 }
+
+export async function sendEmail(controller, driveKey, publicKey, toEmail, title, message) {
+    // create key
+    const emailUuid = uuidv4();
+    const emailKey = await deriveFileKey(driveKey, emailUuid);
+
+    // encrypt email key
+    const encryptKey = encryptEmailKey(publicKey, emailKey);
+    // encrypt content
+    const encryptResult = await fileEncrypt(emailKey, message);
+    const encryptContent = Buffer.concat([
+        encryptKey, // 126
+        Buffer.from(encryptResult.cipherIV, 'base64'), // 12
+        encryptResult.data,
+    ]);
+
+    const fileSize = Buffer.byteLength(encryptContent);
+    let cost = 0;
+    if (fileSize > 24 * 1024 - 326) {
+        cost = Math.floor((fileSize + 326) / 1024 / 24);
+    }
+
+    const hexUuid = stringToHex(emailUuid);
+    const emailName = toEmail.split("@");
+    const hexToEmail = stringToHex(emailName[0]);
+    const hexTitle = stringToHex(title);
+    const hexData = '0x' + encryptContent.toString('hex');
+    const fileContract = FileContract(controller);
+    try {
+        const tx = await fileContract.sendEmail(hexToEmail, hexUuid, hexTitle, hexData, '0x', {
+            value: ethers.utils.parseEther(cost.toString())
+        });
+        const receipt = await tx.wait();
+        return receipt.status;
+    } catch (e) {
+        console.log(e)
+        return false;
+    }
+}
+
+
+
 
 // account: string, data: Buffer): Promise<Buffer>
 export async function decryptEmailKey(account, data) {
