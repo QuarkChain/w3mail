@@ -170,8 +170,37 @@ export async function sendEmail(controller, driveKey, publicKey, toEmail, title,
     }
 }
 
-
-
+export async function getEmails(contract, type) {
+    const fileContract = FileContract(contract);
+    let result;
+    if (type === 1) {
+        result = await fileContract.getInboxEmails();
+    } else {
+        result = await fileContract.getSentEmails();
+    }
+    const emailList = [];
+    const times = result[0];
+    const uuids = result[1];
+    const emails = result[2];
+    const titles = result[3];
+    const fileUuids = result[4];
+    const fileNames = result[5];
+    for (let i = 0; i < uuids.length; i++) {
+        const email = {
+            time: new Date(parseInt(times[i], 10) * 1000),
+            uuid: uuids[i],
+            emailAddress: hexToString(emails[i]),
+            title: hexToString(titles[i]),
+            fileUuid: fileUuids[i],
+            fileName: hexToString(fileNames[i])
+        };
+        emailList.push(email);
+    }
+    emailList.sort(function (a, b) {
+        return a.time - b.time
+    });
+    return emailList;
+}
 
 // account: string, data: Buffer): Promise<Buffer>
 export async function decryptEmailKey(account, data) {

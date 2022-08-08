@@ -1,8 +1,8 @@
 <template>
   <el-container class="home">
     <el-aside width="200px" class="email-menu">
-      <el-button class="home-btn">New Email</el-button>
-      <el-menu default-active="1">
+      <el-button class="home-btn" @click="openNewMail">New Email</el-button>
+      <el-menu :default-active="this.currentIndex" @select="handleSelect">
         <el-menu-item index="1" class="menu-item">
           <i class="el-icon-receiving menu-item-icon"></i>
           <span slot="title">Inbox</span>
@@ -34,17 +34,19 @@
         </div>
         <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>
       </el-header>
+
       <el-main class="main-menu">
-        <CreateMail />
+        <CreateMail v-if="currentIndex==='0'"/>
+        <EmailList v-else-if="currentIndex==='1'" :types="1"/>
+        <EmailList v-else-if="currentIndex==='2'" :types="0"/>
       </el-main>
     </el-container>
   </el-container>
 </template>
 
 <script>
-import { mapActions } from "vuex";
-import {getEmailInfo, signInfo, encryptDrive} from '@/utils/w3mail';
-import CreateMail from "./CreateMail.vue";
+import CreateMail from "@/page/CreateMail.vue";
+import EmailList from "@/page/EmailList";
 
 export default {
   name: 'Email',
@@ -52,10 +54,12 @@ export default {
     return {
       signature: undefined,
       input: "",
+      currentIndex: "1"
     }
   },
   components: {
-    CreateMail
+    CreateMail,
+    EmailList
   },
   computed: {
     contract() {
@@ -69,50 +73,19 @@ export default {
       return this.$store.state.account;
     },
   },
-  asyncComputed: {
-    email: {
-      async get() {
-        if (this.account) {
-          const email = await getEmailInfo(this.contract, this.account);
-          this.setEmail(email);
-          return email;
-        }
-        return undefined;
-      },
-      default: undefined,
-      watch: ['account']
-    },
-  },
   methods: {
-    ...mapActions(["setDriveKey", "setEmail"]),
-    onCreateEmail() {
-      this.$router.push({path: "/register"});
+    openNewMail() {
+      this.currentIndex = "0";
+      this.$router.push({path: '/email', query: {index: this.currentIndex}});
     },
-    async openEmail() {
-      const password = this.input;
-      if (!password) {
-        this.$message.error('Password Error');
-        return;
-      }
-
-      if (!this.signature) {
-        this.signature = await signInfo(this.account, this.email.publicKey, 3334);
-        if (!this.signature) {
-          this.$message.error('Failed to enter email');
-          return;
-        }
-      }
-
-      const driveKey = await encryptDrive(this.signature, password, this.email.encrypt, this.email.iv);
-      if (driveKey) {
-        this.setDriveKey(driveKey);
-        sessionStorage.setItem(this.account, driveKey);
-        this.$router.push({path: "/email"});
-      } else {
-        this.$message.error('Password Error');
-      }
-    },
+    handleSelect(index) {
+      this.currentIndex = index;
+      this.$router.push({path: '/email', query: {index: this.currentIndex}});
+    }
   },
+  created() {
+    this.currentIndex = this.$route.query.index;
+  }
 }
 </script>
 
