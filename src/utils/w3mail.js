@@ -154,7 +154,6 @@ export async function sendEmail(controller, driveKey, sendPublicKey, receivePubl
         Buffer.from(encryptResult.cipherIV, 'base64'), // 12
         encryptResult.data,
     ]);
-    console.log(encryptSendKey, encryptReceiveKey);
 
     const fileSize = Buffer.byteLength(encryptContent);
     let cost = 0;
@@ -234,20 +233,27 @@ async function decryptEmailKey(account, data) {
 
 export async function getEmailMessageByUuid(contract, account, types, uuid) {
     const fileContract = FileContract(contract);
-    const result = await fileContract.getEmailContent(uuid, 0);
-    const content = result.substr(2, result.length - 1);
-    const data = Buffer.from(content, 'hex');
+    try{
+        const result = await fileContract.getEmailContent(uuid, 0);
+        if(result === '0x'){
+            return '-deleted';
+        }
 
-    let toKeyData;
-    if(types === 1){
-        // inbox [112 - 224)
-        toKeyData = data.slice(126, 224);
-    } else {
-        // sendKey [0 - 126)
-        toKeyData = data.slice(0, 112);
+        const content = result.substr(2, result.length - 1);
+        const data = Buffer.from(content, 'hex');
+        let toKeyData;
+        if(types === 1){
+            // inbox [112 - 224)
+            toKeyData = data.slice(126, 224);
+        } else {
+            // sendKey [0 - 126)
+            toKeyData = data.slice(0, 112);
+        }
+        const encryptKey = await decryptEmailKey(account, toKeyData);
+        const iv = data.slice(224, 236).toString('base64');
+        const contentData = data.slice(236, data.length);
+        return await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
+    } catch (e){
+        return undefined;
     }
-    const encryptKey = await decryptEmailKey(account, toKeyData);
-    const iv = data.slice(224, 236).toString('base64');
-    const contentData = data.slice(236, data.length);
-    return await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
 }

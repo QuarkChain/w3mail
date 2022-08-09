@@ -28,11 +28,16 @@
 
     <el-container>
       <el-header class="header-menu">
-        <div>
-          <input type="checkbox" />
-          <i class="el-icon-delete" style="margin-left: 15px"></i>
+        <div v-if="this.currentIndex==='100'" class="header-back" @click="onBack">
+          <i class="el-icon-back" style="margin-right: 10px;"></i>Back
         </div>
-        <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>
+        <div v-else class="header-layout">
+          <div>
+            <input type="checkbox"/>
+            <i class="el-icon-delete" style="margin-left: 15px"></i>
+          </div>
+          <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>
+        </div>
       </el-header>
 
       <el-main class="main-menu">
@@ -92,6 +97,9 @@ export default {
         return false;
       }
       return true;
+    },
+    onBack() {
+      this.$router.back(-1);
     }
   },
   created() {
@@ -142,13 +150,25 @@ export default {
 }
 
 .header-menu {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   background: #ffffff;
   border-radius: 5px;
   height: 8vh;
   margin: 0 20px;
+}
+
+.header-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+.header-back {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  height: 100%;
+  color: black;
+  cursor: pointer;
 }
 
 .main-menu {

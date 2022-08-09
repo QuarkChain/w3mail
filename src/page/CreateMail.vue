@@ -14,7 +14,7 @@
     <mavon-editor language="en" defaultOpen="edit" :subfield="false"
                   :boxShadow="false" :toolbars="toolbar"
                   class="mkd-editor" @change="onChange"/>
-    <el-button class="home-btn" @click="onSend">Send</el-button>
+    <el-button class="home-btn" :loading="this.sending" @click="onSend">Send</el-button>
   </el-col>
 </template>
 
@@ -45,7 +45,8 @@ export default {
       },
       subject: '',
       to: "",
-      message: ""
+      message: "",
+      sending: false
     }
   },
   components: {
@@ -99,7 +100,9 @@ export default {
         return;
       }
 
+      this.sending = true;
       const result = await sendEmail(this.contract, this.driveKey, this.user.publicKey, publicKey, toEmail, this.subject, this.message);
+      this.sending = false;
       if (result) {
         this.$notify({title: 'Send Email', message: 'Send Success',type: 'success'});
         this.$router.push({path: '/email', query: {index: "1"}});
