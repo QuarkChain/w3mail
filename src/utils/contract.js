@@ -8,6 +8,7 @@ const FileContractInfo = {
         "function getSentEmails() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory emails,bytes[] memory titles,bytes[] memory fileUuids,bytes[] memory fileNames)",
         "function getInboxEmails() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory emails,bytes[] memory titles,bytes[] memory fileUuids,bytes[] memory fileNames)",
         "function getEmailContent(bytes memory uuid, uint256 chunkId) public view returns(bytes memory)",
+        "function defaultEmail() public view returns(string memory)",
 
         "function getFileInfos() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory names,bytes[] memory types)",
         "function getFileInfo(bytes memory uuid) public view returns(uint256 realChunkCount,uint256 chunkCount,uint256 time,bytes memory name,bytes memory fileType,bytes memory iv)",

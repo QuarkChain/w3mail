@@ -36,7 +36,7 @@
             <input type="checkbox"/>
             <i class="el-icon-delete" style="margin-left: 15px"></i>
           </div>
-          <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>
+<!--          <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>-->
         </div>
       </el-header>
 

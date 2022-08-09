@@ -8,10 +8,15 @@
       Connect
     </button>
     <div v-else class="user">
-      <div class="account">
+      <div v-if="this.user" class="account">
+        {{ this.user.email }}@w3mail.com
+        &nbsp;|&nbsp;
+        {{ this.networkId === 3334 ? "Galileo": "Mainnet" }}
+      </div>
+      <div v-else class="account">
         {{ this.accountShort }}
         &nbsp;|&nbsp;
-        {{ this.networkId === 3334 ? "Galileo Testnet": "Mainnet" }}
+        {{ this.networkId === 3334 ? "Galileo": "Mainnet" }}
       </div>
     </div>
   </div>
@@ -58,6 +63,9 @@ export default {
     },
     driveKey() {
       return this.$store.state.driveKey;
+    },
+    user() {
+      return this.$store.state.user;
     }
   },
   methods: {

@@ -233,6 +233,9 @@ async function decryptEmailKey(account, data) {
 
 export async function getEmailMessageByUuid(contract, account, types, uuid) {
     const fileContract = FileContract(contract);
+    if(uuid === '0x64656661756c742d656d61696c') {
+        return await fileContract.defaultEmail();
+    }
     try{
         const result = await fileContract.getEmailContent(uuid, 0);
         if(result === '0x'){
@@ -252,7 +255,8 @@ export async function getEmailMessageByUuid(contract, account, types, uuid) {
         const encryptKey = await decryptEmailKey(account, toKeyData);
         const iv = data.slice(224, 236).toString('base64');
         const contentData = data.slice(236, data.length);
-        return await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
+        const bf = await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
+        return bf.toString();
     } catch (e){
         return undefined;
     }
