@@ -80,7 +80,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(["setDriveKey","setEmail"]),
+    ...mapActions(["setDriveKey","setUser"]),
     async questPublicKey() {
       const key = await getPublicKey(this.account);
       if (key) {
@@ -124,16 +124,15 @@ export default {
       }
       const emailKey = await register(this.contract, this.publicKey, this.signature, email, password);
       if(emailKey) {
-        const emailInfo =  {
+        const userInfo =  {
             email: email,
-            publicKey: this.publicKey,
-            encrypt: "0x",
-            iv: "0x",
+            publicKey: this.publicKey
         }
-        this.setEmail(emailInfo);
-        sessionStorage.setItem(this.account, emailKey);
+        this.setUser(userInfo);
+        sessionStorage.setItem(this.account + "/user", JSON.stringify(userInfo));
         this.setDriveKey(emailKey);
-        this.$router.push({path: "/email"});
+        sessionStorage.setItem(this.account, emailKey);
+        await this.$router.push({path: "/email"});
       } else {
         this.$message.error('Register Fail!');
       }

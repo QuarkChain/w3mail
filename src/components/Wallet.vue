@@ -61,7 +61,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(["setChainConfig", "setAccount", "setDriveKey"]),
+    ...mapActions(["setChainConfig", "setAccount", "setDriveKey", "setUser"]),
     connectWallet() {
       if (!window.ethereum) {
         this.$message.error('Can\'t setup the Web3Q network on metamask because window.ethereum is undefined');
@@ -97,6 +97,8 @@ export default {
         // drive key clear
         sessionStorage.setItem(this.currentAccount, '');
         sessionStorage.setItem(accounts[0], '');
+        sessionStorage.setItem(this.currentAccount + "/user", '');
+        sessionStorage.setItem(accounts[0] + "/user", '');
         this.currentAccount = accounts[0];
         this.setAccount(accounts[0]);
       }
@@ -116,6 +118,10 @@ export default {
       const driveKey = sessionStorage.getItem(accounts[0]);
       if (driveKey) {
         this.setDriveKey(driveKey);
+      }
+      const user = sessionStorage.getItem(accounts[0] + "/user");
+      if (user) {
+        this.setUser(JSON.parse(user));
       }
 
       const c = chains.find((v) => v.chainID === chainID);

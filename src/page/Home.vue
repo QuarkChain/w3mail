@@ -7,7 +7,7 @@
     </p>
 
     <!--  register  -->
-    <div v-if="this.email && this.email.email !== 'none'">
+    <div v-if="this.user && this.user.email">
       <el-input placeholder="Input Password" v-model="input" show-password></el-input>
       <el-button type="warning" round class="home-btn" @click="openEmail">
         Enter
@@ -21,7 +21,7 @@
 
 <script>
 import { mapActions } from "vuex";
-import {getEmailInfo, signInfo, encryptDrive} from '@/utils/w3mail';
+import {getUserInfo, signInfo, encryptDrive} from '@/utils/w3mail';
 
 export default {
   name: 'Home',
@@ -44,12 +44,15 @@ export default {
     },
   },
   asyncComputed: {
-    email: {
+    user: {
       async get() {
         if (this.account) {
-          const email = await getEmailInfo(this.contract, this.account);
-          this.setEmail(email);
-          return email;
+          const user = await getUserInfo(this.contract, this.account);
+          if(user.email) {
+            this.setUser(user);
+            sessionStorage.setItem(this.account + "/user", JSON.stringify(user));
+          }
+          return user;
         }
         return undefined;
       },
@@ -58,7 +61,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(["setDriveKey", "setEmail"]),
+    ...mapActions(["setDriveKey", "setUser"]),
     onCreateEmail() {
       this.$router.push({path: "/register"});
     },
@@ -70,14 +73,14 @@ export default {
       }
 
       if (!this.signature) {
-        this.signature = await signInfo(this.account, this.email.publicKey, 3334);
+        this.signature = await signInfo(this.account, this.user.publicKey, 3334);
         if (!this.signature) {
           this.$message.error('Failed to enter email');
           return;
         }
       }
 
-      const driveKey = await encryptDrive(this.signature, password, this.email.encrypt, this.email.iv);
+      const driveKey = await encryptDrive(this.signature, password, this.user.encrypt, this.user.iv);
       if (driveKey) {
         this.setDriveKey(driveKey);
         sessionStorage.setItem(this.account, driveKey);

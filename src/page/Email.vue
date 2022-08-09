@@ -39,6 +39,7 @@
         <CreateMail v-if="currentIndex==='0'"/>
         <EmailList v-else-if="currentIndex==='1'" :types="1"/>
         <EmailList v-else-if="currentIndex==='2'" :types="0"/>
+        <EmailInfo v-else-if="currentIndex==='100'" />
       </el-main>
     </el-container>
   </el-container>
@@ -46,7 +47,8 @@
 
 <script>
 import CreateMail from "@/page/CreateMail.vue";
-import EmailList from "@/page/EmailList";
+import EmailList from "@/page/EmailList.vue";
+import EmailInfo from "@/page/EmailInfo.vue";
 
 export default {
   name: 'Email',
@@ -59,7 +61,8 @@ export default {
   },
   components: {
     CreateMail,
-    EmailList
+    EmailList,
+    EmailInfo
   },
   computed: {
     contract() {
@@ -81,10 +84,21 @@ export default {
     handleSelect(index) {
       this.currentIndex = index;
       this.$router.push({path: '/email', query: {index: this.currentIndex}});
+    },
+    canNumber(value) {
+      try {
+        Number(value);
+      } catch (e){
+        return false;
+      }
+      return true;
     }
   },
   created() {
-    this.currentIndex = this.$route.query.index;
+    const index = this.$route.query.index;
+    if (index && this.canNumber(index)) {
+      this.currentIndex = index;
+    }
   }
 }
 </script>

@@ -1,10 +1,10 @@
 <template>
   <el-col>
-    <el-input size="small" v-model="subject">
-      <div slot="prepend" class="input-title">Subject:</div>
-    </el-input>
-    <el-input size="small" v-model="to" class="input-to">
+    <el-input size="small" v-model="to">
       <div slot="prepend" class="input-title">To:</div>
+    </el-input>
+    <el-input size="small" v-model="subject" class="input-to">
+      <div slot="prepend" class="input-title">Subject:</div>
     </el-input>
     <w3q-deployer :show-list="false" :drag="false" :fileContract="contract" :driveKey="this.driveKey">
       <div class="input-file">
@@ -66,6 +66,9 @@ export default {
     driveKey() {
       return this.$store.state.driveKey;
     },
+    user() {
+      return this.$store.state.user;
+    }
   },
   methods: {
     onChange(msg) {
@@ -96,9 +99,10 @@ export default {
         return;
       }
 
-      const result = await sendEmail(this.contract, this.driveKey, publicKey, toEmail, this.subject, this.message);
+      const result = await sendEmail(this.contract, this.driveKey, this.user.publicKey, publicKey, toEmail, this.subject, this.message);
       if (result) {
         this.$notify({title: 'Send Email', message: 'Send Success',type: 'success'});
+        this.$router.push({path: '/email', query: {index: "1"}});
       } else {
         this.$notify.error({title: 'Send Email', message: 'Send fail!',type: 'success'});
       }

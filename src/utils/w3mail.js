@@ -1,5 +1,12 @@
 import { encrypt } from '@metamask/eth-sig-util';
-import {deriveDriveKey, deriveFileKey, driveDecrypt, driveEncrypt, fileEncrypt} from "@/utils/dirve/w3crypto";
+import {
+    deriveDriveKey,
+    deriveFileKey,
+    driveDecrypt,
+    driveEncrypt,
+    fileDecrypt,
+    fileEncrypt
+} from "@/utils/dirve/w3crypto";
 import {FileContract} from "@/utils/contract";
 import {ethers} from "ethers";
 import {v4 as uuidv4} from "uuid";
@@ -17,22 +24,21 @@ function createSignMessage(address, publicKey, networkId) {
         + `Nonce: ${publicKey}`;
 }
 
-export async function getEmailInfo(controller, account) {
+export async function getUserInfo(controller, account) {
     const fileContract = FileContract(controller);
     const result = await fileContract.getUserInfo(account);
     const publicKey = result.publicKey.substr(2, result.publicKey.length - 1);
     return {
-        email: result.email !== "0x" ? hexToString(result.email) : 'none',
+        email: result.email !== "0x" ? hexToString(result.email) : undefined,
         publicKey: Buffer.from(publicKey, 'hex').toString('base64'),
-        encrypt: result.encryptData !== "0x" ? result.encryptData : 'none',
-        iv: result.iv !== "0x" ? hexToString(result.iv) : 'none',
+        encrypt: result.encryptData !== "0x" ? result.encryptData : undefined,
+        iv: result.iv !== "0x" ? hexToString(result.iv) : undefined,
     }
 }
 
 export async function getPublicKeyByEmail(controller, email) {
     const fileContract = FileContract(controller);
-    email = stringToHex(email);
-    const result = await fileContract.getPublicKeyByEmail(email);
+    const result = await fileContract.getPublicKeyByEmail(stringToHex(email));
     if (new BigNumber(result).toNumber() === 0) {
         return undefined;
     }
@@ -73,12 +79,12 @@ export async function register(controller, publicKey, signature, email, password
     // create key
     const driveKey = await deriveDriveKey(signature, password);
     // encrypt public key
-    const driveEncryptData = await driveEncrypt(driveKey, publicKey);
+    const driveEncryptData = await driveEncrypt(driveKey, Buffer.from(publicKey, "base64"));
     const hexData = '0x' + driveEncryptData.data.toString('hex');
-    const iv = stringToHex(driveEncryptData.cipherIV);
-
     publicKey = '0x' + Buffer.from(publicKey, 'base64').toString('hex');
     email = stringToHex(email);
+    const iv = stringToHex(driveEncryptData.cipherIV);
+
     const fileContract = FileContract(controller);
     const tx = await fileContract.register(publicKey, email, hexData, iv);
     const receipt = await tx.wait();
@@ -132,20 +138,23 @@ function encryptEmailKey(publicKey, data) {
     return buf;
 }
 
-export async function sendEmail(controller, driveKey, publicKey, toEmail, title, message) {
+export async function sendEmail(controller, driveKey, sendPublicKey, receivePublicKey, toEmail, title, message) {
     // create key
     const emailUuid = uuidv4();
     const emailKey = await deriveFileKey(driveKey, emailUuid);
     // encrypt email key by receive user public key
-    const encryptKey = encryptEmailKey(publicKey, emailKey);
+    const encryptSendKey = encryptEmailKey(sendPublicKey, Buffer.from(emailKey, 'base64'));
+    const encryptReceiveKey = encryptEmailKey(receivePublicKey, Buffer.from(emailKey, 'base64'));
     // encrypt content
     const encryptResult = await fileEncrypt(emailKey, message);
     // data
     const encryptContent = Buffer.concat([
-        encryptKey, // 126
+        encryptSendKey, // 112
+        encryptReceiveKey, // 112
         Buffer.from(encryptResult.cipherIV, 'base64'), // 12
         encryptResult.data,
     ]);
+    console.log(encryptSendKey, encryptReceiveKey);
 
     const fileSize = Buffer.byteLength(encryptContent);
     let cost = 0;
@@ -189,21 +198,21 @@ export async function getEmails(contract, type) {
         const email = {
             time: new Date(parseInt(times[i], 10) * 1000),
             uuid: uuids[i],
-            emailAddress: hexToString(emails[i]),
-            title: hexToString(titles[i]),
+            emailAddress: emails[i],
+            title: titles[i],
             fileUuid: fileUuids[i],
-            fileName: hexToString(fileNames[i])
+            fileName: fileNames[i]
         };
         emailList.push(email);
     }
     emailList.sort(function (a, b) {
-        return a.time - b.time
+        return b.time - a.time
     });
     return emailList;
 }
 
 // account: string, data: Buffer): Promise<Buffer>
-export async function decryptEmailKey(account, data) {
+async function decryptEmailKey(account, data) {
     // Reconstructing the original object outputed by encryption
     const structuredData = {
         version: 'x25519-xsalsa20-poly1305',
@@ -223,3 +232,22 @@ export async function decryptEmailKey(account, data) {
     return ascii85.decode(decrypt);
 }
 
+export async function getEmailMessageByUuid(contract, account, types, uuid) {
+    const fileContract = FileContract(contract);
+    const result = await fileContract.getEmailContent(uuid, 0);
+    const content = result.substr(2, result.length - 1);
+    const data = Buffer.from(content, 'hex');
+
+    let toKeyData;
+    if(types === 1){
+        // inbox [112 - 224)
+        toKeyData = data.slice(126, 224);
+    } else {
+        // sendKey [0 - 126)
+        toKeyData = data.slice(0, 112);
+    }
+    const encryptKey = await decryptEmailKey(account, toKeyData);
+    const iv = data.slice(224, 236).toString('base64');
+    const contentData = data.slice(236, data.length);
+    return await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
+}
