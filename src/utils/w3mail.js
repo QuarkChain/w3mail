@@ -9,7 +9,6 @@ import {
 } from "@/utils/dirve/w3crypto";
 import {FileContract} from "@/utils/contract";
 import {ethers} from "ethers";
-import {v4 as uuidv4} from "uuid";
 import BigNumber from "bignumber.js";
 const ascii85 = require('ascii85');
 
@@ -138,9 +137,8 @@ function encryptEmailKey(publicKey, data) {
     return buf;
 }
 
-export async function sendEmail(controller, driveKey, sendPublicKey, receivePublicKey, toEmail, title, message) {
+export async function sendEmail(controller, emailUuid, driveKey, sendPublicKey, receivePublicKey, toEmail, title, message, fileUuid) {
     // create key
-    const emailUuid = uuidv4();
     const emailKey = await deriveFileKey(driveKey, emailUuid);
     // encrypt email key by receive user public key
     const encryptSendKey = encryptEmailKey(sendPublicKey, Buffer.from(emailKey, 'base64'));
@@ -165,9 +163,10 @@ export async function sendEmail(controller, driveKey, sendPublicKey, receivePubl
     const hexToEmail = stringToHex(toEmail);
     const hexTitle = stringToHex(title);
     const hexData = '0x' + encryptContent.toString('hex');
+    const hexFileUuid = stringToHex(fileUuid);
     const fileContract = FileContract(controller);
     try {
-        const tx = await fileContract.sendEmail(hexToEmail, hexUuid, hexTitle, hexData, '0x', {
+        const tx = await fileContract.sendEmail(hexToEmail, hexUuid, hexTitle, hexData, hexFileUuid, {
             value: ethers.utils.parseEther(cost.toString())
         });
         const receipt = await tx.wait();

@@ -6,11 +6,9 @@
     <el-input size="small" v-model="subject" class="input-to">
       <div slot="prepend" class="input-title">Subject:</div>
     </el-input>
-    <w3q-deployer :show-list="false" :drag="false" :fileContract="contract" :driveKey="this.driveKey">
-      <div class="input-file">
-        <i class="el-icon-paperclip"></i><span>Upload</span>
-      </div>
-    </w3q-deployer>
+    <w3q-deployer class="mail-deployer" :drag="false"
+                  :fileContract="contract" :driveKey="this.driveKey"
+                  :emailUuid="this.uuid" :onSuccess="onSuccess" :onDelete="onDelete"/>
     <mavon-editor language="en" defaultOpen="edit" :subfield="false"
                   :boxShadow="false" :toolbars="toolbar"
                   class="mkd-editor" @change="onChange"/>
@@ -24,6 +22,7 @@ import W3qDeployer from '@/components/w3q-deployer.vue';
 import validator from "email-validator";
 import 'mavon-editor/dist/css/index.css';
 import {getPublicKeyByEmail, sendEmail} from "@/utils/w3mail";
+import {v4 as uuidv4} from "uuid";
 
 export default {
   name: 'Email',
@@ -44,8 +43,10 @@ export default {
         code: true, // code
       },
       subject: '',
-      to: "",
-      message: "",
+      to: '',
+      message: '',
+      fileUuid: '',
+      uuid: uuidv4(),
       sending: false
     }
   },
@@ -101,15 +102,25 @@ export default {
       }
 
       this.sending = true;
-      const result = await sendEmail(this.contract, this.driveKey, this.user.publicKey, publicKey, toEmail, this.subject, this.message);
+      const result = await sendEmail(
+          this.contract, this.uuid, this.driveKey,
+          this.user.publicKey, publicKey,
+          toEmail, this.subject, this.message, this.fileUuid
+      );
       this.sending = false;
       if (result) {
         this.$notify({title: 'Send Email', message: 'Send Success',type: 'success'});
-        this.$router.push({path: '/email', query: {index: "1"}});
+        await this.$router.push({path: '/email', query: {index: "1"}});
       } else {
-        this.$notify.error({title: 'Send Email', message: 'Send fail!',type: 'success'});
+        this.$notify.error({title: 'Send Email', message: 'Send fail!'});
       }
     },
+    onSuccess(response) {
+      this.fileUuid = response.uuid;
+    },
+    onDelete() {
+      this.fileUuid = '';
+    }
   },
 }
 </script>
@@ -125,23 +136,6 @@ export default {
 }
 .input-to {
   margin-top: 15px;
-}
-.input-file {
-  display: flex;
-  flex-direction: row;
-  justify-content: left;
-  align-items: center;
-  width: 66px;
-  margin-top: 15px;
-  padding: 2px 5px;
-  border: 1px solid #999999;
-  border-radius: 25px;
-  font-size: 12px;
-  color: black;
-  cursor: pointer;
-}
-.input-file:hover {
-  border: 1px solid #6E529C;
 }
 .mkd-editor {
   height: 312px !important;
@@ -163,5 +157,9 @@ export default {
 .home-btn:disabled:hover,
 .home-btn:disabled {
   background-color: #cccccc;
+}
+
+.mail-deployer {
+  margin-top: 15px;
 }
 </style>

@@ -8,15 +8,12 @@ const FileContractInfo = {
         "function getSentEmails() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory emails,bytes[] memory titles,bytes[] memory fileUuids,bytes[] memory fileNames)",
         "function getInboxEmails() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory emails,bytes[] memory titles,bytes[] memory fileUuids,bytes[] memory fileNames)",
         "function getEmailContent(bytes memory uuid, uint256 chunkId) public view returns(bytes memory)",
+        "function getFile(bytes memory uuid, uint256 chunkId) public view returns(bytes memory data)",
         "function defaultEmail() public view returns(string memory)",
-
-        "function getFileInfos() public view returns (uint256[] memory times,bytes[] memory uuids,bytes[] memory names,bytes[] memory types)",
-        "function getFileInfo(bytes memory uuid) public view returns(uint256 realChunkCount,uint256 chunkCount,uint256 time,bytes memory name,bytes memory fileType,bytes memory iv)",
-        "function getFile(bytes memory uuid, uint256 chunkId) public view returns(bytes memory)",
 
         "function register(bytes32 publicKey, bytes memory email, bytes memory encryptData, bytes memory iv) public",
         "function sendEmail(bytes memory toEmail,bytes memory uuid,bytes memory title,bytes calldata encryptData,bytes memory fileUuid) public payable",
-        "function writeChunk(bytes memory uuid, bytes memory name, bytes memory iv, bytes memory fileType, uint256 chunkCount, uint256 chunkId, bytes calldata data) public payable",
+        "function writeChunk(bytes memory uuid, bytes memory name, uint256 chunkId, bytes calldata data) public payable",
         "function remove(bytes memory uuid) external returns (uint256)",
         "function removes(bytes[] memory uuids) public",
     ],
