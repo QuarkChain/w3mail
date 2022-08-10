@@ -33,8 +33,8 @@
         </div>
         <div v-else class="header-layout">
           <div>
-            <input type="checkbox"/>
-            <i class="el-icon-delete" style="margin-left: 15px"></i>
+            <input type="checkbox" :disabled="this.currentIndex==='0'"/>
+            <i class="el-icon-delete" :class="{'icon-disabled': this.currentIndex==='0'}" style="margin-left: 15px"></i>
           </div>
 <!--          <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>-->
         </div>
@@ -175,5 +175,8 @@ export default {
   background: #ffffff;
   border-radius: 5px;
   margin: 20px 20px 0;
+}
+.icon-disabled{
+  color: #cccccc;
 }
 </style>

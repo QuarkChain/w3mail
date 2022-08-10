@@ -67,7 +67,10 @@ export default {
       return "";
     },
     fileKey() {
-      return sessionStorage.getItem(this.uuid + "fileKey");
+      if (this.emailMessage) {
+        return sessionStorage.getItem(this.uuid + "fileKey");
+      }
+      return undefined;
     }
   },
   asyncComputed: {
@@ -79,7 +82,6 @@ export default {
             return context;
           }
           const result = await getEmailMessageByUuid(this.contract, this.account, this.types, this.from, this.uuid);
-          console.log(result);
           if (result && result.content !== '-deleted') {
             sessionStorage.setItem(this.uuid, result.content);
             sessionStorage.setItem(this.uuid + "fileKey", result.key);
