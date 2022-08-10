@@ -77,14 +77,10 @@ export default {
       this.message = msg;
     },
     async onSend() {
-      if (!this.driveKey || !this.message) {
+      if (!this.driveKey) {
         return;
       }
 
-      if (!this.subject) {
-        this.$message.error('Subject is empty');
-        return;
-      }
       if (!this.to) {
         this.$message.error('Receive email is empty');
         return;
@@ -98,6 +94,14 @@ export default {
       const publicKey = await getPublicKeyByEmail(this.contract, toEmail);
       if(!publicKey){
         this.$message.error('Invalid receive email');
+        return;
+      }
+      if (!this.subject) {
+        this.$message.error('Subject is empty');
+        return;
+      }
+      if (!this.message) {
+        this.$message.error('Message is empty');
         return;
       }
 

@@ -188,15 +188,17 @@ export async function getEmails(contract, type) {
     const emailList = [];
     const times = result[0];
     const uuids = result[1];
-    const emails = result[2];
-    const titles = result[3];
-    const fileUuids = result[4];
-    const fileNames = result[5];
+    const fromMails = result[2];
+    const toMails = result[3];
+    const titles = result[4];
+    const fileUuids = result[5];
+    const fileNames = result[6];
     for (let i = 0; i < uuids.length; i++) {
         const email = {
             time: new Date(parseInt(times[i], 10) * 1000),
             uuid: uuids[i],
-            emailAddress: emails[i],
+            fromMail: fromMails[i],
+            toMail: toMails[i],
             title: titles[i],
             fileUuid: fileUuids[i],
             fileName: fileNames[i]
@@ -230,13 +232,17 @@ async function decryptEmailKey(account, data) {
     return ascii85.decode(decrypt);
 }
 
-export async function getEmailMessageByUuid(contract, account, types, uuid) {
+export async function getEmailMessageByUuid(contract, account, types, fromMail, uuid) {
     const fileContract = FileContract(contract);
     if(uuid === '0x64656661756c742d656d61696c') {
-        return await fileContract.defaultEmail();
+        const content = await fileContract.defaultEmail();
+        return {
+            key: '',
+            content: content
+        }
     }
     try{
-        const result = await fileContract.getEmailContent(uuid, 0);
+        const result = await fileContract.getEmailContent(fromMail, uuid, 0);
         if(result === '0x'){
             return '-deleted';
         }
@@ -255,8 +261,32 @@ export async function getEmailMessageByUuid(contract, account, types, uuid) {
         const iv = data.slice(224, 236).toString('base64');
         const contentData = data.slice(236, data.length);
         const bf = await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
-        return bf.toString();
+        return {
+            key: encryptKey.toString('base64'),
+            content: bf.toString()
+        };
     } catch (e){
         return undefined;
     }
+}
+
+export async function downloadFile(contract, fromMail, uuid, fileKey) {
+    const fileContract = FileContract(contract);
+    const chunkCount = await fileContract.countChunks(fromMail, uuid);
+    const quest = [];
+    for (let i = 0; i < chunkCount.toNumber(); i++) {
+        quest.push(fileContract.getFile(fromMail, uuid, i));
+    }
+    const encryptDatas = await Promise.all(quest);
+    let encryptData = '';
+    for (let data of encryptDatas) {
+        data = data.substr(2, data.length - 1);
+        encryptData = encryptData + data;
+    }
+
+    // decrypt
+    const data = Buffer.from(encryptData, 'hex');
+    const iv = data.slice(0, 12);
+    const fileData = data.slice(12, data.length);
+    return await fileDecrypt(iv, fileKey, fileData);
 }

@@ -4,13 +4,13 @@
       <div class="email-item" v-for="(item) in this.list" :key="item.uuid" @click="openEmail(item)">
         <el-row :gutter="20">
           <el-col :span="1"><input type="checkbox"/></el-col>
-          <el-col :span="4">
-            <div class="email-name">{{ renderHex(item.emailAddress) }}@w3mail.com</div>
+          <el-col :span="6">
+            <div class="email-name">{{ emailAddress(item) }}@w3mail.com</div>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="6">
             <div class="email-title">{{ renderHex(item.title) }}</div>
           </el-col>
-          <el-col :span="9">
+          <el-col :span="6">
             <div class="email-message">******************</div>
           </el-col>
           <el-col :span="5">
@@ -86,6 +86,9 @@ export default {
     renderHex(text) {
       return hexToString(text);
     },
+    emailAddress(item) {
+      return this.renderHex(this.types === 1 ? item.fromMail : item.toMail);
+    },
     loadData() {
       this.$asyncComputed.list.update();
     },
@@ -100,7 +103,8 @@ export default {
       const query = {
         index: "100",
         uuid: item.uuid,
-        email: item.emailAddress,
+        from: item.fromMail,
+        to: item.toMail,
         title: item.title,
         time: this.renderTimestamp(item.time),
       };

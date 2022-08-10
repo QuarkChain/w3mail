@@ -14,9 +14,9 @@
       <span>{{this.time}}</span>
     </div>
     <div v-if="this.fileUuid" class="email-title-item">
-      <div class="input-file">
-        <i class="el-icon-paperclip" style="margin-right: 2px"></i><span>{{ this.fileName }}</span>
-      </div>
+      <el-button class="input-file" :loading="this.download" :disabled="!this.fileKey" @click="onDownload">
+        {{ this.fileName }}
+      </el-button>
     </div>
     <div class="email-message" v-loading="!this.emailMessage">
       <el-empty v-if="this.emailMessage==='-deleted'" description="This Email Is Delete!" :image-size="100" />
@@ -27,9 +27,10 @@
 </template>
 
 <script>
-import {getEmailMessageByUuid} from "@/utils/w3mail";
+import {downloadFile, getEmailMessageByUuid} from "@/utils/w3mail";
 import {ethers} from "ethers";
 import {marked} from 'marked';
+import fileDownload from "js-file-download";
 
 const hexToString = (h) => ethers.utils.toUtf8String(h);
 
@@ -41,9 +42,11 @@ export default {
       uuid: undefined,
       subject: undefined,
       from: undefined,
-      to: undefined,
+      email: undefined,
       fileUuid: undefined,
       fileName: undefined,
+      fileData: undefined,
+      download: false
     }
   },
   computed: {
@@ -62,20 +65,25 @@ export default {
         return marked(this.emailMessage);
       }
       return "";
+    },
+    fileKey() {
+      return sessionStorage.getItem(this.uuid + "fileKey");
     }
   },
   asyncComputed: {
     emailMessage: {
       async get() {
         if (this.uuid && this.account) {
-          let context = sessionStorage.getItem(this.uuid);
+          const context = sessionStorage.getItem(this.uuid);
           if (context) {
             return context;
           }
-          context = await getEmailMessageByUuid(this.contract, this.account, this.types, this.uuid);
-          if (context) {
-            sessionStorage.setItem(this.uuid, context);
-            return context;
+          const result = await getEmailMessageByUuid(this.contract, this.account, this.types, this.from, this.uuid);
+          console.log(result);
+          if (result && result.content !== '-deleted') {
+            sessionStorage.setItem(this.uuid, result.content);
+            sessionStorage.setItem(this.uuid + "fileKey", result.key);
+            return result.content;
           }
           return '-error';
         }
@@ -90,11 +98,30 @@ export default {
     this.types = query.types;
     this.uuid = query.uuid;
     this.subject = hexToString(query.title);
-    this.email = hexToString(query.email);
+    this.from = query.from;
+    this.to = query.to;
+    this.email = hexToString(query.types==='1'?query.from:query.to);
     this.time = query.time;
     if (query.file) {
       this.fileUuid = query.file;
-      this.fileName = query.fname;
+      this.fileName = hexToString(query.fname);
+    }
+  },
+  methods: {
+    async onDownload() {
+      // download image
+      if (this.fileData) {
+        fileDownload(this.fileData, this.fileName);
+        return;
+      }
+
+      if (!this.contract) {
+        return;
+      }
+      this.download = true;
+      this.fileData = await downloadFile(this.contract, this.from, this.fileUuid, this.fileKey);
+      fileDownload(this.fileData, this.fileName);
+      this.download = false;
     }
   }
 }
@@ -115,11 +142,8 @@ export default {
 }
 
 .input-file {
-  display: flex;
-  flex-direction: row;
-  justify-content: left;
-  align-items: center;
-  padding: 2px 10px;
+  padding: 5px 8px;
+  margin: 3px 0;
   border: 1px solid #999999;
   border-radius: 25px;
   font-size: 12px;
@@ -128,7 +152,12 @@ export default {
   width: min-content;
 }
 .input-file:hover {
+  color: black;
+  background: #ffffff;
   border: 1px solid #6E529C;
+}
+.input-file:disabled {
+  color: #cccccc;
 }
 
 .email-message {
