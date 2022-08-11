@@ -107,8 +107,8 @@ export default {
         sessionStorage.setItem(accounts[0], '');
         sessionStorage.setItem(this.currentAccount + "/user", '');
         sessionStorage.setItem(accounts[0] + "/user", '');
-        this.setDriveKey('');
-        this.setUser('');
+        this.setDriveKey(null);
+        this.setUser(null);
         this.currentAccount = accounts[0];
         this.setAccount(accounts[0]);
       }
@@ -128,10 +128,14 @@ export default {
       const driveKey = sessionStorage.getItem(accounts[0]);
       if (driveKey) {
         this.setDriveKey(driveKey);
+      } else {
+        this.setDriveKey(null);
       }
       const user = sessionStorage.getItem(accounts[0] + "/user");
       if (user) {
         this.setUser(JSON.parse(user));
+      } else {
+        this.setUser(null);
       }
 
       const c = chains.find((v) => v.chainID === chainID);

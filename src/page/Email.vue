@@ -80,9 +80,16 @@ export default {
       }
       return null;
     },
-    account() {
-      return this.$store.state.account;
-    },
+    driveKey() {
+      return this.$store.state.driveKey;
+    }
+  },
+  watch: {
+    driveKey: function (val) {
+      if(!val) {
+        this.$router.push({path: "/"});
+      }
+    }
   },
   methods: {
     openNewMail() {
