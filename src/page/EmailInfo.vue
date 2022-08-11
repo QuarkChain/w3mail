@@ -19,8 +19,14 @@
       </el-button>
     </div>
     <div class="email-message" v-loading="!this.emailMessage">
-      <el-empty v-if="this.emailMessage==='-deleted'" description="This Email Is Delete!" :image-size="100" />
-      <el-empty v-else-if="this.emailMessage==='-error'" description="Decrypt Fail!" :image-size="100" />
+      <div v-if="this.emailMessage==='-deleted'" class="empty-error">
+        <i class="el-icon-error empty-image"/>
+        <span class="empty-description">This Email Is Delete!</span>
+      </div>
+      <div v-else-if="this.emailMessage==='-error'" class="empty-error">
+        <i class="el-icon-warning empty-image"/>
+        <span class="empty-description">Decrypt Fail!</span>
+      </div>
       <div v-else v-html="markdownToHtml" />
     </div>
   </el-col>
@@ -82,7 +88,7 @@ export default {
             return context;
           }
           const result = await getEmailMessageByUuid(this.contract, this.account, this.types, this.from, this.uuid);
-          if (result && result.content !== '-deleted') {
+          if (result) {
             sessionStorage.setItem(this.uuid, result.content);
             sessionStorage.setItem(this.uuid + "fileKey", result.key);
             return result.content;
@@ -121,8 +127,13 @@ export default {
         return;
       }
       this.download = true;
-      this.fileData = await downloadFile(this.contract, this.from, this.fileUuid, this.fileKey);
-      fileDownload(this.fileData, this.fileName);
+      const data = await downloadFile(this.contract, this.from, this.fileUuid, this.fileKey);
+      if (data !== '-deleted') {
+        this.fileData = data;
+        fileDownload(this.fileData, this.fileName);
+      } else {
+        this.$notify({title: 'Error', message: 'This File is deleted!', type: 'error'});
+      }
       this.download = false;
     }
   }
@@ -167,5 +178,21 @@ export default {
   margin: 20px;
   text-align: left;
   min-height: 360px;
+}
+.empty-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 120px 0;
+}
+.empty-image {
+  color: #f5365c;
+  font-size: 40px;
+}
+.empty-description {
+  color: #f5365c;
+  font-size: 16px;
+  margin-top: 10px;
 }
 </style>

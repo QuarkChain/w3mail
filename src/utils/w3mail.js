@@ -16,7 +16,7 @@ const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
 const hexToString = (h) => ethers.utils.toUtf8String(h);
 
 function createSignMessage(address, publicKey, networkId) {
-    return `W3Mail wants you to sign in with your Ethereum account:\n${address}\n\n`+
+    return `W3Mail wants you to sign in with your Ethereum account:\n${address}\n\n`
         + 'URI: https://galileo.web3q.io/w3mail.w3q/\n'
         + 'Version: 1\n'
         + `Chain ID: ${networkId}\n`
@@ -46,7 +46,7 @@ export async function getPublicKeyByEmail(controller, email) {
 }
 
 export async function getPublicKey(account) {
-    try{
+    try {
         return await window.ethereum.request({
             method: 'eth_getEncryptionPublicKey',
             params: [account],
@@ -234,23 +234,26 @@ async function decryptEmailKey(account, data) {
 
 export async function getEmailMessageByUuid(contract, account, types, fromMail, uuid) {
     const fileContract = FileContract(contract);
-    if(uuid === '0x64656661756c742d656d61696c') {
+    if (uuid === '0x64656661756c742d656d61696c') {
         const content = await fileContract.defaultEmail();
         return {
             key: '',
             content: content
         }
     }
-    try{
+    try {
         const result = await fileContract.getEmailContent(fromMail, uuid, 0);
-        if(result === '0x'){
-            return '-deleted';
+        if (result === '0x') {
+            return {
+                key: '',
+                content: '-deleted'
+            }
         }
 
         const content = result.substr(2, result.length - 1);
         const data = Buffer.from(content, 'hex');
         let toKeyData;
-        if(types === 1){
+        if (types === 1) {
             // inbox [112 - 224)
             toKeyData = data.slice(126, 224);
         } else {
@@ -265,7 +268,7 @@ export async function getEmailMessageByUuid(contract, account, types, fromMail, 
             key: encryptKey.toString('base64'),
             content: bf.toString()
         };
-    } catch (e){
+    } catch (e) {
         return undefined;
     }
 }
@@ -273,6 +276,9 @@ export async function getEmailMessageByUuid(contract, account, types, fromMail, 
 export async function downloadFile(contract, fromMail, uuid, fileKey) {
     const fileContract = FileContract(contract);
     const chunkCount = await fileContract.countChunks(fromMail, uuid);
+    if (chunkCount.toNumber() === 0) {
+        return "-deleted";
+    }
     const quest = [];
     for (let i = 0; i < chunkCount.toNumber(); i++) {
         quest.push(fileContract.getFile(fromMail, uuid, i));

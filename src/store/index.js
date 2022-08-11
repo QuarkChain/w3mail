@@ -7,7 +7,7 @@ export default new Vuex.Store({
     chainConfig: {},
     account: '',
     driveKey: '',
-    user: {}
+    user: ''
   },
   mutations: {
     chainMutation: (state, payload) => state.chainConfig = payload,

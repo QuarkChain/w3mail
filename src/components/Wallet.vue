@@ -107,6 +107,8 @@ export default {
         sessionStorage.setItem(accounts[0], '');
         sessionStorage.setItem(this.currentAccount + "/user", '');
         sessionStorage.setItem(accounts[0] + "/user", '');
+        this.setDriveKey('');
+        this.setUser('');
         this.currentAccount = accounts[0];
         this.setAccount(accounts[0]);
       }
