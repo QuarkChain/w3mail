@@ -6,7 +6,7 @@ import {
     driveEncrypt,
     fileDecrypt,
     fileEncrypt
-} from "@/utils/dirve/w3crypto";
+} from "@/utils/w3crypto";
 import {FileContract} from "@/utils/contract";
 import {ethers} from "ethers";
 import BigNumber from "bignumber.js";

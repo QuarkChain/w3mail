@@ -41,7 +41,7 @@
                 <template slot="append">@w3mail.com</template>
               </el-input>
               <el-input class="item-input" placeholder="Input Password" v-model="input" show-password></el-input>
-              <el-button type="warning" round class="home-btn" @click="onRegister" :disabled="!this.account">
+              <el-button type="warning" round class="home-btn" :disabled="!this.account" :loading="showLoading" @click="onRegister" >
                 Register
               </el-button>
             </div>
@@ -65,6 +65,7 @@ export default {
       email: "",
       input: "",
       active: 0,
+      showLoading: false,
     }
   },
   computed: {
@@ -122,7 +123,9 @@ export default {
         this.$message.error('This Mail is registered');
         return;
       }
+      this.showLoading = true;
       const emailKey = await register(this.contract, this.publicKey, this.signature, email, password);
+      this.showLoading = false;
       if(emailKey) {
         const userInfo =  {
             email: email,

@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { FileContract } from "./contract";
 import { v4 as uuidv4} from 'uuid';
-import {deriveFileKey, fileEncrypt} from "@/utils/dirve/w3crypto";
+import {deriveFileKey, fileEncrypt} from "@/utils/w3crypto";
 
 const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
 
