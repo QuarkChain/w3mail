@@ -1,9 +1,13 @@
 <template>
   <div v-loading="loading">
     <div v-if="this.list && this.list.length > 0">
-      <div class="email-item" v-for="(item) in this.list" :key="item.uuid" @click="openEmail(item)">
+      <div class="email-item" v-for="(item) in this.list" :key="item.uuid" @click.stop="openEmail(item)">
         <el-row :gutter="20">
-          <el-col :span="1"><input type="checkbox"/></el-col>
+          <el-col :span="1">
+            <label @click.stop="()=>{}" >
+              <input type="checkbox" :id="item.uuid" :value="item" @change="changeParentCheckBox" v-model="deleteList"/>
+            </label>
+          </el-col>
           <el-col :span="6">
             <div class="email-name">{{ emailAddress(item) }}@w3mail.com</div>
           </el-col>
@@ -26,7 +30,7 @@
 
 <script>
 import {ethers} from "ethers";
-import {getEmails} from "@/utils/w3mail";
+import {getEmails, deleteEmail} from "@/utils/w3mail";
 
 const hexToString = (h) => ethers.utils.toUtf8String(h);
 
@@ -35,6 +39,8 @@ export default {
   data: () => {
     return {
       loadInterval: null,
+      deleteList: [],
+      showDeleteProgress: false,
     }
   },
   props: {
@@ -55,7 +61,7 @@ export default {
       return this.$store.state.account;
     },
     loading() {
-      return this.list === undefined;
+      return this.list === undefined || this.showDeleteProgress;
     }
   },
   asyncComputed: {
@@ -117,6 +123,47 @@ export default {
         path: '/email',
         query: query
       });
+    },
+    onDelete() {
+      if (!this.contract) {
+        return;
+      }
+      if (this.deleteList.length > 0) {
+        const uuids = [];
+        for(const item of this.deleteList) {
+          item.showProgress = true;
+          uuids.push(item.uuid);
+        }
+        this.showDeleteProgress = true;
+        deleteEmail(this.contract, this.types, uuids)
+            .then((v) => {
+              this.showDeleteProgress = false;
+              if (v) {
+                for(const item of this.deleteList) {
+                  this.list = this.list.filter(value => item !== value);
+                }
+                this.deleteList = [];
+                this.changeParentCheckBox();
+                this.$notify({title: 'Success', message: 'Delete Success', type: 'success'});
+              } else {
+                this.$notify({title: 'Error', message: 'Delete Fail', type: 'error'});
+              }
+            })
+            .catch(() => {
+              this.showDeleteProgress = false;
+              this.$notify({title: 'Error', message: 'Delete Fail', type: 'error'});
+            });
+      }
+    },
+    onSelectAll(value) {
+      if(value) {
+        this.deleteList = this.deleteList.concat(this.list);
+      } else {
+        this.deleteList = [];
+      }
+    },
+    changeParentCheckBox() {
+      this.$emit('changeCheckBox', this.deleteList.length === this.list.length);
     }
   },
   created() {
@@ -146,9 +193,11 @@ export default {
 .email-name,
 .email-title {
   font-size: 16px;
+  text-align: left;
 }
 .email-message,
 .email-time {
   font-size: 13px;
+  text-align: left;
 }
 </style>

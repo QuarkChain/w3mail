@@ -290,3 +290,11 @@ export async function downloadFile(contract, fromMail, uuid, fileKey) {
     const fileData = data.slice(12, data.length);
     return await fileDecrypt(iv, fileKey, fileData);
 }
+
+
+export async function deleteEmail(contract, types, uuids) {
+    const fileContract = FileContract(contract);
+    const tx = await fileContract.removeEmails(types, uuids);
+    const receipt = await tx.wait();
+    return receipt.status;
+}

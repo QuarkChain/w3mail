@@ -15,8 +15,7 @@ const FileContractInfo = {
         "function register(bytes32 publicKey, bytes memory email, bytes memory encryptData, bytes memory iv) public",
         "function sendEmail(bytes memory toEmail,bytes memory uuid,bytes memory title,bytes calldata encryptData,bytes memory fileUuid) public payable",
         "function writeChunk(bytes memory uuid, bytes memory name, uint256 chunkId, bytes calldata data) public payable",
-        "function remove(bytes memory uuid) external returns (uint256)",
-        "function removes(bytes[] memory uuids) public",
+        "function removeEmails(uint256 types, bytes[] memory uuids) public",
     ],
 };
 

@@ -33,8 +33,10 @@
         </div>
         <div v-else class="header-layout">
           <div>
-            <input type="checkbox" :disabled="this.currentIndex==='0'"/>
-            <i class="el-icon-delete" :class="{'icon-disabled': this.currentIndex==='0'}" style="margin-left: 15px"></i>
+            <label><input type="checkbox" :disabled="this.currentIndex==='0'" v-model="checkAll" @click="onSelect"/></label>
+            <span class="delete-button" @click="onDelete" >
+              <i class="el-icon-delete" :class="{'icon-disabled': this.currentIndex==='0'}"/>
+            </span>
           </div>
 <!--          <el-pagination layout="prev, pager, next" :page-size="20" :total="1"></el-pagination>-->
         </div>
@@ -42,8 +44,8 @@
 
       <el-main class="main-menu">
         <CreateMail v-if="currentIndex==='0'"/>
-        <EmailList v-else-if="currentIndex==='1'" :types="1"/>
-        <EmailList v-else-if="currentIndex==='2'" :types="0"/>
+        <EmailList ref="inboxList" v-else-if="currentIndex==='1'" :types="1" v-on:changeCheckBox="changeCheckAll" />
+        <EmailList ref="sentList" v-else-if="currentIndex==='2'" :types="2" v-on:changeCheckBox="changeCheckAll" />
         <EmailInfo v-else-if="currentIndex==='100'" />
       </el-main>
     </el-container>
@@ -61,7 +63,8 @@ export default {
     return {
       signature: undefined,
       input: "",
-      currentIndex: "1"
+      currentIndex: "1",
+      checkAll: false,
     }
   },
   components: {
@@ -100,6 +103,27 @@ export default {
     },
     onBack() {
       this.$router.back(-1);
+    },
+    onDelete() {
+      if (this.currentIndex === '1') {
+        // inbox
+        this.$refs.inboxList.onDelete();
+      } else if (this.currentIndex === '2'){
+        // sent
+        this.$refs.sentList.onDelete();
+      }
+    },
+    onSelect() {
+      if (this.currentIndex === '1') {
+        // inbox
+        this.$refs.inboxList.onSelectAll(!this.checkAll);
+      } else if (this.currentIndex === '2'){
+        // sent
+        this.$refs.sentList.onSelectAll(!this.checkAll);
+      }
+    },
+    changeCheckAll(value) {
+      this.checkAll = value;
     }
   },
   created() {
@@ -175,6 +199,11 @@ export default {
   background: #ffffff;
   border-radius: 5px;
   margin: 20px 20px 0;
+}
+
+.delete-button {
+  margin-left: 20px;
+  cursor: pointer;
 }
 .icon-disabled{
   color: #cccccc;
