@@ -158,7 +158,7 @@ export default {
     width: max-content;
   }
   .input-file:hover {
-    border: 1px solid #6E529C;
+    border: 1px solid #486FAE;
   }
   .input-file-disabled {
     border: 1px solid #cccccc;

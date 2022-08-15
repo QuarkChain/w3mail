@@ -170,7 +170,7 @@ export default {
 .input-file:hover {
   color: black;
   background: #ffffff;
-  border: 1px solid #6E529C;
+  border: 1px solid #486FAE;
 }
 .input-file:disabled {
   color: #cccccc;

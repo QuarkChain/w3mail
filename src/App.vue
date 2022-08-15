@@ -1,7 +1,7 @@
 <template>
   <div>
-    <w3q-tip v-if="!isMobile" style="width: 100vw" bgColor="#715297" fontColor="#ffffff" fontSize="15px"/>
-    <w3q-tip v-else style="width: 100vw" bgColor="#715297" fontColor="#ffffff" fontSize="12px"/>
+    <w3q-tip v-if="!isMobile" style="width: 100vw" bgColor="#486FAE" fontColor="#ffffff" fontSize="15px"/>
+    <w3q-tip v-else style="width: 100vw" bgColor="#486FAE" fontColor="#ffffff" fontSize="12px"/>
 
     <div id="app">
       <el-container>

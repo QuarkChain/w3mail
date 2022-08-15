@@ -159,7 +159,7 @@ export default {
   margin-top: 15px;
 }
 .home-btn {
-  background-color: #6E529C;
+  background-color: #486FAE;
   margin: 15px 0 0;
   font-size: 15px;
   color: #ffffff;
@@ -169,7 +169,7 @@ export default {
 .home-btn:focus,
 .home-btn:hover {
   color: #ffffff;
-  background-color: #6E529CBB;
+  background-color: #486FAEBB;
 }
 .home-btn:disabled:hover,
 .home-btn:disabled {

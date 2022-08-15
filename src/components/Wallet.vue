@@ -212,12 +212,12 @@ export default {
   color: #ffffff;
   font-size: 18px;
   border: 0;
-  background: #6E529C;
+  background: #486FAE;
   border-radius: 36px;
   cursor: pointer;
 }
 .btn-connect:hover {
-  background-color: #6E529CBB;
+  background-color: #486FAEBB;
   border: 0;
 }
 </style>
