@@ -7,17 +7,10 @@
     >
       Connect
     </button>
-    <div v-else class="user">
-      <div v-if="this.user" class="account">
-        {{ this.user.email }}@w3mail.com
-        &nbsp;|&nbsp;
-        {{ this.networkId === 3334 ? "Galileo": "Mainnet" }}
-      </div>
-      <div v-else class="account">
-        {{ this.accountShort }}
-        &nbsp;|&nbsp;
-        {{ this.networkId === 3334 ? "Galileo": "Mainnet" }}
-      </div>
+    <div v-else class="account">
+      {{ this.accountShort }}
+      &nbsp;|&nbsp;
+      {{ this.networkId === 3334 ? "Galileo" : "Mainnet" }}
     </div>
   </div>
 </template>
@@ -25,6 +18,7 @@
 <script>
 import { mapActions } from "vuex";
 import { chains } from '@/store/state';
+import {getPublicKeyByAddress, loginBySignature} from "@/utils/w3mail";
 
 export class UnsupportedChainIdError extends Error {
   constructor() {
@@ -61,15 +55,9 @@ export default {
         )
       );
     },
-    driveKey() {
-      return this.$store.state.driveKey;
-    },
-    user() {
-      return this.$store.state.user;
-    }
   },
   methods: {
-    ...mapActions(["setChainConfig", "setAccount", "setDriveKey", "setUser"]),
+    ...mapActions(["setChainConfig", "setAccount", "setDriveKey", "setPublicKey"]),
     connectWallet() {
       if (!window.ethereum) {
         this.$message.error('Can\'t setup the Web3Q network on metamask because window.ethereum is undefined');
@@ -85,7 +73,7 @@ export default {
         this.setChainConfig({});
       } else {
         const c = chains.find((v) => v.chainID === chainID);
-        this.setChainConfig(JSON.parse(JSON.stringify(c)));
+        this.setChainConfig(c);
         if (!this.currentAccount) {
           await this.login();
         }
@@ -102,15 +90,10 @@ export default {
         return;
       }
       if (accounts[0] !== this.currentAccount) {
-        // drive key clear
-        sessionStorage.setItem(this.currentAccount, '');
-        sessionStorage.setItem(accounts[0], '');
-        sessionStorage.setItem(this.currentAccount + "/user", '');
-        sessionStorage.setItem(accounts[0] + "/user", '');
-        this.setDriveKey(null);
-        this.setUser(null);
         this.currentAccount = accounts[0];
         this.setAccount(accounts[0]);
+        // login
+        await loginBySignature();
       }
     },
     async handleAccount(accounts) {
@@ -125,23 +108,13 @@ export default {
         throw new UnsupportedChainIdError();
       }
 
-      const driveKey = sessionStorage.getItem(accounts[0]);
-      if (driveKey) {
-        this.setDriveKey(driveKey);
-      } else {
-        this.setDriveKey(null);
-      }
-      const user = sessionStorage.getItem(accounts[0] + "/user");
-      if (user) {
-        this.setUser(JSON.parse(user));
-      } else {
-        this.setUser(null);
-      }
-
       const c = chains.find((v) => v.chainID === chainID);
-      this.setChainConfig(JSON.parse(JSON.stringify(c)));
+      this.setChainConfig(c);
       this.setAccount(accounts[0]);
       this.currentAccount = accounts[0];
+
+      // set user info
+      await this.loginEmail();
     },
     async login() {
       window.ethereum
@@ -189,6 +162,28 @@ export default {
         return false
       }
     },
+    async loginEmail() {
+      let publicKey = sessionStorage.getItem(this.currentAccount + "/publicKey");
+      if (!publicKey) {
+        const {EmailController} = this.$store.state.chainConfig;
+        publicKey = await getPublicKeyByAddress(EmailController, this.currentAccount);
+        if (publicKey) {
+          sessionStorage.setItem(this.currentAccount + "/publicKey", publicKey);
+        }
+      }
+      this.setPublicKey(publicKey);
+
+      let driveKey = sessionStorage.getItem(this.currentAccount + "/driveKey");
+      if (!driveKey) {
+        let driveKey = await loginBySignature();
+        if (driveKey) {
+          sessionStorage.setItem(this.currentAccount + "/driveKey", driveKey);
+        } else {
+          this.$message.error('Login failed!!');
+        }
+      }
+      this.setDriveKey(driveKey);
+    }
   },
 };
 </script>
@@ -197,11 +192,6 @@ export default {
 #wallet {
   display: flex;
   justify-content: center;
-}
-
-.user{
-  display: flex;
-  flex-direction: row;
 }
 
 .account {
@@ -213,18 +203,6 @@ export default {
   border: 1px solid #E8E6F2;
   padding: 0 15px;
   text-align: center;
-}
-.favorite{
-  cursor: pointer;
-  height: 38px;
-  width: 38px;
-  margin-right: 10px;
-  padding: 0;
-  color: #6E529C;
-  background-image: url("../assets/user.png");
-  background-repeat:no-repeat;
-  background-size:100% 100%;
-  -moz-background-size:100% 100%;
 }
 
 .btn-connect {

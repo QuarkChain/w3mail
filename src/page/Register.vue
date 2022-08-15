@@ -8,7 +8,6 @@
         <el-steps :active="active" finish-status="success" align-center>
           <el-step title="Step 1"></el-step>
           <el-step title="Step 2"></el-step>
-          <el-step title="Step 3"></el-step>
         </el-steps>
         <el-carousel ref="carousel" :autoplay="false" arrow="never" indicator-position="none">
           <el-carousel-item>
@@ -25,23 +24,12 @@
           </el-carousel-item>
           <el-carousel-item>
             <div class="card-item">
-              <p class="item-title">Signature</p>
-              <p class="item-message">
-                Sign this message to prove you have access to this account.
-              </p>
-              <el-button type="warning" round class="home-btn" @click="onSign" :disabled="!this.account">
-                Sign Message
-              </el-button>
-            </div>
-          </el-carousel-item>
-          <el-carousel-item>
-            <div class="card-item">
               <p class="item-title">Register W3Mail</p>
-              <el-input class="item-input" placeholder="Input Email" v-model="email">
-                <template slot="append">@w3mail.com</template>
-              </el-input>
-              <el-input class="item-input" placeholder="Input Password" v-model="input" show-password></el-input>
-              <el-button type="warning" round class="home-btn" :disabled="!this.account" :loading="showLoading" @click="onRegister" >
+              <p class="item-message">
+                Submit the public key and other information to the smart contract for registration.
+              </p>
+              <el-button type="warning" round class="home-btn" :disabled="!this.account" :loading="showLoading"
+                         @click="onRegister">
                 Register
               </el-button>
             </div>
@@ -53,18 +41,15 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
-import {getPublicKey, signInfo, isRegistered, register} from "@/utils/w3mail";
+import {mapActions} from "vuex";
+import {getPublicKey, getPublicKeyByAddress, register} from "@/utils/w3mail";
 
 export default {
   name: 'Register',
   data: () => {
     return {
-      publicKey: undefined,
-      signature: undefined,
-      email: "",
-      input: "",
       active: 0,
+      publicKey: undefined,
       showLoading: false,
     }
   },
@@ -81,7 +66,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(["setDriveKey","setUser"]),
+    ...mapActions(["setPublicKey"]),
     async questPublicKey() {
       const key = await getPublicKey(this.account);
       if (key) {
@@ -92,49 +77,23 @@ export default {
         this.$message.error('Get Public Key Error');
       }
     },
-    async onSign() {
-      const sign = await signInfo(this.account, this.publicKey, 3334);
-      if (sign) {
-        this.signature = sign;
-        this.active = this.active + 1;
-        this.$refs.carousel.setActiveItem(this.active);
-      } else {
-        this.$message.error('Sign Error');
-      }
-    },
     async onRegister() {
-      if (!this.contract) {
+      if (!this.contract && this.publicKey) {
         return;
       }
 
-      const email = this.email;
-      if (!email) {
-        this.$message.error('Email Error');
-        return;
-      }
-      const password = this.input;
-      if (!password) {
-        this.$message.error('Password Error');
-        return;
-      }
-
-      const registered = await isRegistered(this.contract, email);
+      const registered = await getPublicKeyByAddress(this.contract, this.account);
       if (registered) {
-        this.$message.error('This Mail is registered');
+        this.$message.error('This address is registered');
         return;
       }
+
       this.showLoading = true;
-      const emailKey = await register(this.contract, this.publicKey, this.signature, email, password);
+      const state = await register(this.contract, this.publicKey);
       this.showLoading = false;
-      if(emailKey) {
-        const userInfo =  {
-            email: email,
-            publicKey: this.publicKey
-        }
-        this.setUser(userInfo);
-        sessionStorage.setItem(this.account + "/user", JSON.stringify(userInfo));
-        this.setDriveKey(emailKey);
-        sessionStorage.setItem(this.account, emailKey);
+      if (state) {
+        this.setPublicKey(this.publicKey);
+        sessionStorage.setItem(this.account + "/publicKey", this.publicKey);
         await this.$router.push({path: "/email"});
       } else {
         this.$message.error('Register Fail!');
@@ -165,19 +124,22 @@ export default {
   padding: 15px;
   width: 1200px;
 }
-.card-item{
+
+.card-item {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100%;
 }
+
 .item-title {
   font-size: 20px;
   color: #000000;
   line-height: 20px;
   font-family: AlibabaPuHuiTiB;
 }
+
 .item-message {
   font-size: 15px;
   color: #333333;
@@ -186,6 +148,7 @@ export default {
   font-weight: normal;
   font-family: AlibabaPuHuiTiR;
 }
+
 .item-input {
   margin-top: 25px;
   width: 320px;
@@ -198,10 +161,12 @@ export default {
   border: 0;
   min-width: 120px;
 }
+
 .home-btn:focus,
 .home-btn:hover {
   background-color: #6E529CBB;
 }
+
 .home-btn:disabled:hover,
 .home-btn:disabled {
   background-color: #cccccc;

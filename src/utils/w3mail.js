@@ -1,48 +1,49 @@
-import { encrypt } from '@metamask/eth-sig-util';
+import {encrypt} from '@metamask/eth-sig-util';
+import {ethers} from "ethers";
+import {SiweMessage} from 'siwe';
 import {
     deriveDriveKey,
     deriveFileKey,
-    driveDecrypt,
-    driveEncrypt,
     fileDecrypt,
     fileEncrypt
 } from "@/utils/w3crypto";
 import {FileContract} from "@/utils/contract";
-import {ethers} from "ethers";
+
 import BigNumber from "bignumber.js";
 const ascii85 = require('ascii85');
 
 const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
 const hexToString = (h) => ethers.utils.toUtf8String(h);
 
-function createSignMessage(address, publicKey, networkId) {
-    return `W3Mail wants you to sign in with your Ethereum account:\n${address}\n\n`
-        + 'URI: https://galileo.web3q.io/w3mail.w3q/\n'
-        + 'Version: 1\n'
-        + `Chain ID: ${networkId}\n`
-        + `Nonce: ${publicKey}`;
+function createSignMessage(address, statement) {
+    const message = new SiweMessage({
+        domain: 'https://galileo.web3q.io/',
+        address,
+        statement,
+        uri: 'https://galileo.web3q.io/w3mail.w3q/',
+        version: '1',
+        chainId: '1'
+    });
+    return message.prepareMessage();
 }
 
-export async function getUserInfo(controller, account) {
-    const fileContract = FileContract(controller);
-    const result = await fileContract.getUserInfo(account);
-    const publicKey = result.publicKey.substr(2, result.publicKey.length - 1);
-    return {
-        email: result.email !== "0x" ? hexToString(result.email) : undefined,
-        publicKey: Buffer.from(publicKey, 'hex').toString('base64'),
-        encrypt: result.encryptData !== "0x" ? result.encryptData : undefined,
-        iv: result.iv !== "0x" ? hexToString(result.iv) : undefined,
-    }
-}
-
-export async function getPublicKeyByEmail(controller, email) {
-    const fileContract = FileContract(controller);
-    const result = await fileContract.getPublicKeyByEmail(stringToHex(email));
-    if (new BigNumber(result).toNumber() === 0) {
+async function signInfo() {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    try {
+        const message = createSignMessage(await signer.getAddress(), 'Login W3Mail.');
+        return await signer.signMessage(message);
+    } catch (e) {
         return undefined;
     }
-    const publicKey = result.substr(2, result.length - 1);
-    return Buffer.from(publicKey, 'hex').toString('base64');
+}
+
+export async function loginBySignature() {
+    const signature = await signInfo();
+    if (!signature) {
+        return undefined;
+    }
+    return await deriveDriveKey(signature, 'password');
 }
 
 export async function getPublicKey(account) {
@@ -56,54 +57,22 @@ export async function getPublicKey(account) {
     }
 }
 
-export async function signInfo(address, publicKey, networkId) {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    try {
-        const message = createSignMessage(address, publicKey, networkId);
-        return await signer.signMessage(message);
-    } catch (e) {
+export async function getPublicKeyByAddress(controller, account) {
+    const fileContract = FileContract(controller);
+    const result = await fileContract.getPublicKey(account);
+    if (new BigNumber(result).toNumber() === 0) {
         return undefined;
     }
+    const publicKey = result.substr(2, result.length - 1);
+    return Buffer.from(publicKey, 'hex').toString('base64');
 }
 
-export async function isRegistered(controller, email) {
-    email = stringToHex(email);
-    const fileContract = FileContract(controller);
-    const address = await fileContract.emailList(email);
-    return address !== '0x0000000000000000000000000000000000000000';
-}
-
-export async function register(controller, publicKey, signature, email, password) {
-    // create key
-    const driveKey = await deriveDriveKey(signature, password);
-    // encrypt public key
-    const driveEncryptData = await driveEncrypt(driveKey, Buffer.from(publicKey, "base64"));
-    const hexData = '0x' + driveEncryptData.data.toString('hex');
+export async function register(controller, publicKey) {
     publicKey = '0x' + Buffer.from(publicKey, 'base64').toString('hex');
-    email = stringToHex(email);
-    const iv = stringToHex(driveEncryptData.cipherIV);
-
     const fileContract = FileContract(controller);
-    const tx = await fileContract.register(publicKey, email, hexData, iv);
+    const tx = await fileContract.register(publicKey);
     const receipt = await tx.wait();
-    if (receipt.status) {
-        return driveKey;
-    }
-    return "";
-}
-
-export async function encryptDrive(signature, password, encryptData, iv) {
-    // create key
-    const rootKey = await deriveDriveKey(signature, password);
-    encryptData = encryptData.substr(2, encryptData.length - 1);
-    const data = Buffer.from(encryptData, 'hex');
-    try {
-        await driveDecrypt(iv, rootKey, data);
-        return rootKey;
-    } catch (e) {
-        return undefined;
-    }
+    return receipt.status;
 }
 
 // email send & receive
@@ -186,19 +155,21 @@ export async function getEmails(contract, type) {
         result = await fileContract.getSentEmails();
     }
     const emailList = [];
-    const times = result[0];
-    const uuids = result[1];
+    const isEncryptions = result[0];
+    const times = result[1];
     const fromMails = result[2];
     const toMails = result[3];
-    const titles = result[4];
-    const fileUuids = result[5];
-    const fileNames = result[6];
+    const uuids = result[4];
+    const titles = result[5];
+    const fileUuids = result[6];
+    const fileNames = result[7];
     for (let i = 0; i < uuids.length; i++) {
         const email = {
+            isEncryption: isEncryptions[i],
             time: new Date(parseInt(times[i], 10) * 1000),
-            uuid: uuids[i],
             fromMail: fromMails[i],
             toMail: toMails[i],
+            uuid: uuids[i],
             title: titles[i],
             fileUuid: fileUuids[i],
             fileName: fileNames[i]
@@ -232,15 +203,8 @@ async function decryptEmailKey(account, data) {
     return ascii85.decode(decrypt);
 }
 
-export async function getEmailMessageByUuid(contract, account, types, fromMail, uuid) {
+export async function getEmailMessageByUuid(contract, account, isEncryption, types, fromMail, uuid) {
     const fileContract = FileContract(contract);
-    if (uuid === '0x64656661756c742d656d61696c') {
-        const content = await fileContract.defaultEmail();
-        return {
-            key: '',
-            content: content
-        }
-    }
     try {
         const result = await fileContract.getEmailContent(fromMail, uuid, 0);
         if (result === '0x') {
@@ -248,6 +212,13 @@ export async function getEmailMessageByUuid(contract, account, types, fromMail, 
                 key: '',
                 content: '-deleted'
             }
+        }
+
+        if (isEncryption === 'false') {
+            return {
+                key: '',
+                content: hexToString(result)
+            };
         }
 
         const content = result.substr(2, result.length - 1);

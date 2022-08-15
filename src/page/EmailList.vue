@@ -9,7 +9,7 @@
             </label>
           </el-col>
           <el-col :span="6">
-            <div class="email-name">{{ emailAddress(item) }}@w3mail.com</div>
+            <div class="email-name">{{ accountShort(item) }}</div>
           </el-col>
           <el-col :span="6">
             <div class="email-title">{{ renderHex(item.title) }}</div>
@@ -92,8 +92,16 @@ export default {
     renderHex(text) {
       return hexToString(text);
     },
-    emailAddress(item) {
-      return this.renderHex(this.types === 1 ? item.fromMail : item.toMail);
+    accountShort(item) {
+      const address = this.types === 1 ? item.fromMail : item.toMail;
+      return (
+          address.substring(0, 6) +
+          "..." +
+          address.substring(
+              address.length - 4,
+              address.length
+          )
+      );
     },
     loadData() {
       this.$asyncComputed.list.update();
@@ -108,13 +116,14 @@ export default {
     openEmail(item) {
       const query = {
         index: "100",
+        types: this.types,
+        isEncryption: item.isEncryption,
         uuid: item.uuid,
         from: item.fromMail,
         to: item.toMail,
         title: item.title,
         time: this.renderTimestamp(item.time),
       };
-      query.types = this.types;
       if (item.fileUuid && item.fileUuid !== '0x') {
         query.file = item.fileUuid;
         query.fname = item.fileName;

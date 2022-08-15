@@ -7,7 +7,7 @@
     <div class="email-title-item">
       <span v-if="this.types==='1'" class="email-title">From:</span>
       <span v-else class="email-title">To:</span>
-      <span>{{this.email}}@w3mail.com</span>
+      <span>{{this.email}}</span>
     </div>
     <div class="email-title-item">
       <span class="email-title">Date:</span>
@@ -18,6 +18,7 @@
         {{ this.fileName }}
       </el-button>
     </div>
+
     <div class="email-message" v-loading="!this.emailMessage">
       <div v-if="this.emailMessage==='-deleted'" class="empty-error">
         <i class="el-icon-error empty-image"/>
@@ -47,6 +48,7 @@ export default {
       types: 0,
       uuid: undefined,
       subject: undefined,
+      isEncryption: false,
       from: undefined,
       email: undefined,
       fileUuid: undefined,
@@ -87,7 +89,7 @@ export default {
           if (context) {
             return context;
           }
-          const result = await getEmailMessageByUuid(this.contract, this.account, this.types, this.from, this.uuid);
+          const result = await getEmailMessageByUuid(this.contract, this.account, this.isEncryption, this.types, this.from, this.uuid);
           if (result) {
             sessionStorage.setItem(this.uuid, result.content);
             sessionStorage.setItem(this.uuid + "fileKey", result.key);
@@ -104,12 +106,13 @@ export default {
   created() {
     const query = this.$route.query;
     this.types = query.types;
-    this.uuid = query.uuid;
+    this.isEncryption = query.isEncryption;
     this.subject = hexToString(query.title);
     this.from = query.from;
     this.to = query.to;
-    this.email = hexToString(query.types==='1'?query.from:query.to);
+    this.email = query.types === '1' ? query.from : query.to;
     this.time = query.time;
+    this.uuid = query.uuid;
     if (query.file) {
       this.fileUuid = query.file;
       this.fileName = hexToString(query.fname);

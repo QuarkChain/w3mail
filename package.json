@@ -22,6 +22,7 @@
     "mavon-editor": "^2.10.4",
     "sass": "^1.26.10",
     "sass-loader": "^9.0.2",
+    "siwe": "^1.1.6",
     "uuid": "^8.3.2",
     "vue": "^2.6.11",
     "vue-async-computed": "^3.9.0",
