@@ -127,7 +127,7 @@ export default {
       this.sending = false;
       if (result) {
         this.$notify({title: 'Send Email', message: 'Send Success',type: 'success'});
-        await this.$router.push({path: '/email', query: {index: "1"}});
+        await this.$router.push({path: '/email', query: {index: "2"}});
       } else {
         this.$notify.error({title: 'Send Email', message: 'Send fail!'});
       }

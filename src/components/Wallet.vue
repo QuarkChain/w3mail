@@ -93,7 +93,7 @@ export default {
         this.currentAccount = accounts[0];
         this.setAccount(accounts[0]);
         // login
-        await loginBySignature();
+        await this.loginEmail();
       }
     },
     async handleAccount(accounts) {
