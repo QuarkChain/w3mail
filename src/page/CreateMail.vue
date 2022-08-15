@@ -6,9 +6,12 @@
     <el-input size="small" v-model="subject" class="input-to">
       <div slot="prepend" class="input-title">Subject:</div>
     </el-input>
-    <w3q-deployer class="mail-deployer" :drag="false"
-                  :fileContract="contract" :driveKey="this.driveKey"
-                  :emailUuid="this.uuid" :onSuccess="onSuccess" :onDelete="onDelete"/>
+    <div class="other-class">
+      <label><input type="checkbox" :disabled="!this.receivePublicKey" v-model="isEncryption"/> Encrypt</label>
+      <w3q-deployer class="mail-deployer" :drag="false" :disabled="!this.isEncryption"
+                    :fileContract="contract" :driveKey="this.driveKey"
+                    :emailUuid="this.uuid" :onSuccess="onSuccess" :onDelete="onDelete"/>
+    </div>
     <mavon-editor language="en" defaultOpen="edit" :subfield="false"
                   :boxShadow="false" :toolbars="toolbar"
                   class="mkd-editor" @change="onChange"/>
@@ -17,12 +20,13 @@
 </template>
 
 <script>
+import {ethers} from "ethers";
 import { mavonEditor } from 'mavon-editor';
 import W3qDeployer from '@/components/w3q-deployer.vue';
-import validator from "email-validator";
-import 'mavon-editor/dist/css/index.css';
-import {getPublicKeyByEmail, sendEmail} from "@/utils/w3mail";
+import {getPublicKeyByAddress, sendEmail} from "@/utils/w3mail";
 import {v4 as uuidv4} from "uuid";
+
+import 'mavon-editor/dist/css/index.css';
 
 export default {
   name: 'Email',
@@ -47,6 +51,7 @@ export default {
       message: '',
       fileUuid: '',
       uuid: uuidv4(),
+      isEncryption: false,
       sending: false
     }
   },
@@ -68,9 +73,24 @@ export default {
     driveKey() {
       return this.$store.state.driveKey;
     },
+    publicKey() {
+      return this.$store.state.publicKey;
+    },
     user() {
       return this.$store.state.user;
     }
+  },
+  asyncComputed: {
+    receivePublicKey: {
+      async get() {
+        if (this.to && ethers.utils.isAddress(this.to)) {
+          return await getPublicKeyByAddress(this.contract, this.to);
+        }
+        return undefined;
+      },
+      default: undefined,
+      watch: ['to']
+    },
   },
   methods: {
     onChange(msg) {
@@ -82,18 +102,11 @@ export default {
       }
 
       if (!this.to) {
-        this.$message.error('Receive email is empty');
+        this.$message.error('Receive address is empty');
         return;
       }
-      if (!validator.validate(this.to) || !this.to.endsWith("w3mail.com")) {
-        this.$message.error('Invalid receive email');
-        return;
-      }
-      const values = this.to.split("@");
-      const toEmail = values[0];
-      const publicKey = await getPublicKeyByEmail(this.contract, toEmail);
-      if(!publicKey){
-        this.$message.error('Invalid receive email');
+      if (!ethers.utils.isAddress(this.to)) {
+        this.$message.error('Invalid receive address');
         return;
       }
       if (!this.subject) {
@@ -108,8 +121,8 @@ export default {
       this.sending = true;
       const result = await sendEmail(
           this.contract, this.uuid, this.driveKey,
-          this.user.publicKey, publicKey,
-          toEmail, this.subject, this.message, this.fileUuid
+          this.publicKey, this.receivePublicKey, this.to,
+          this.isEncryption, this.subject, this.message, this.fileUuid
       );
       this.sending = false;
       if (result) {
@@ -163,7 +176,14 @@ export default {
   background-color: #cccccc;
 }
 
-.mail-deployer {
+.other-class {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
   margin-top: 15px;
+}
+.mail-deployer {
+  margin-left: 30px;
 }
 </style>

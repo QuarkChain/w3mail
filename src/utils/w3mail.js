@@ -106,36 +106,46 @@ function encryptEmailKey(publicKey, data) {
     return buf;
 }
 
-export async function sendEmail(controller, emailUuid, driveKey, sendPublicKey, receivePublicKey, toEmail, title, message, fileUuid) {
-    // create key
-    const emailKey = await deriveFileKey(driveKey, emailUuid);
-    // encrypt email key by receive user public key
-    const encryptSendKey = encryptEmailKey(sendPublicKey, Buffer.from(emailKey, 'base64'));
-    const encryptReceiveKey = encryptEmailKey(receivePublicKey, Buffer.from(emailKey, 'base64'));
-    // encrypt content
-    const encryptResult = await fileEncrypt(emailKey, message);
-    // data
-    const encryptContent = Buffer.concat([
-        encryptSendKey, // 112
-        encryptReceiveKey, // 112
-        Buffer.from(encryptResult.cipherIV, 'base64'), // 12
-        encryptResult.data,
-    ]);
-
-    const fileSize = Buffer.byteLength(encryptContent);
+export async function sendEmail(controller, emailUuid, driveKey, sendPublicKey, receivePublicKey, toAddress, isEncryption, title, message, fileUuid) {
+    let hexData;
+    let hexFileUuid;
     let cost = 0;
-    if (fileSize > 24 * 1024 - 326) {
-        cost = Math.floor((fileSize + 326) / 1024 / 24);
+    if (isEncryption) {
+        // create key
+        const emailKey = await deriveFileKey(driveKey, emailUuid);
+        // encrypt email key by receive user public key
+        const encryptSendKey = encryptEmailKey(sendPublicKey, Buffer.from(emailKey, 'base64'));
+        const encryptReceiveKey = encryptEmailKey(receivePublicKey, Buffer.from(emailKey, 'base64'));
+        // encrypt content
+        const encryptResult = await fileEncrypt(emailKey, message);
+        // data
+        const encryptContent = Buffer.concat([
+            encryptSendKey, // 112
+            encryptReceiveKey, // 112
+            Buffer.from(encryptResult.cipherIV, 'base64'), // 12
+            encryptResult.data,
+        ]);
+
+        const fileSize = Buffer.byteLength(encryptContent);
+        if (fileSize > 24 * 1024 - 326) {
+            cost = Math.floor((fileSize + 326) / 1024 / 24);
+        }
+        hexData = '0x' + encryptContent.toString('hex');
+        hexFileUuid = stringToHex(fileUuid);
+    } else {
+        const fileSize = Buffer.byteLength(message);
+        if (fileSize > 24 * 1024 - 326) {
+            cost = Math.floor((fileSize + 326) / 1024 / 24);
+        }
+        hexData = stringToHex(message);
+        hexFileUuid = '0x';
     }
 
-    const hexUuid = stringToHex(emailUuid);
-    const hexToEmail = stringToHex(toEmail);
-    const hexTitle = stringToHex(title);
-    const hexData = '0x' + encryptContent.toString('hex');
-    const hexFileUuid = stringToHex(fileUuid);
     const fileContract = FileContract(controller);
+    const hexUuid = stringToHex(emailUuid);
+    const hexTitle = stringToHex(title);
     try {
-        const tx = await fileContract.sendEmail(hexToEmail, hexUuid, hexTitle, hexData, hexFileUuid, {
+        const tx = await fileContract.sendEmail(toAddress, isEncryption, hexUuid, hexTitle, hexData, hexFileUuid, {
             value: ethers.utils.parseEther(cost.toString())
         });
         const receipt = await tx.wait();

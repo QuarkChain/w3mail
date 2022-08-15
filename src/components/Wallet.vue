@@ -175,7 +175,7 @@ export default {
 
       let driveKey = sessionStorage.getItem(this.currentAccount + "/driveKey");
       if (!driveKey) {
-        let driveKey = await loginBySignature();
+        driveKey = await loginBySignature();
         if (driveKey) {
           sessionStorage.setItem(this.currentAccount + "/driveKey", driveKey);
         } else {

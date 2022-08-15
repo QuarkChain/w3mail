@@ -8,7 +8,7 @@
         type="file"
         @change="onInputChange"
     />
-    <div class="input-file">
+    <div class="input-file" :class="{'input-file-disabled': this.disabled}">
       <span v-if="!this.currentFile" @click="onClickTrigger">
         <i class="el-icon-paperclip" style="margin-right: 3px;"></i><span>Upload</span>
       </span>
@@ -56,6 +56,7 @@ export default {
     accept: { type: String },
     multiple: { type: Boolean, default: false },
     customRequestClint: { type: Function, default: request },
+    disabled: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -64,17 +65,10 @@ export default {
       currentReq: null
     };
   },
-  computed: {
-    enable() {
-      return this.fileContract !== null;
-    }
-  },
   methods: {
     // event
-    onClickTrigger () {
-      if (this.enable) {
-        this.$refs.input.click();
-      }
+    onClickTrigger() {
+      this.$refs.input.click();
     },
     onInputChange (e) {
       // e.target.files is pseudo array, need to convert to real array
@@ -165,6 +159,11 @@ export default {
   }
   .input-file:hover {
     border: 1px solid #6E529C;
+  }
+  .input-file-disabled {
+    border: 1px solid #cccccc;
+    color: #cccccc;
+    pointer-events: none;
   }
 
   .deploy-pending {

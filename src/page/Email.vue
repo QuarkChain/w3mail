@@ -228,5 +228,6 @@ export default {
 }
 .icon-disabled{
   color: #cccccc;
+  pointer-events: none;
 }
 </style>
