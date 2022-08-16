@@ -85,7 +85,9 @@ export default {
     receivePublicKey: {
       async get() {
         if (this.to && ethers.utils.isAddress(this.to)) {
-          return await getPublicKeyByAddress(this.contract, this.to);
+          const publicKey = await getPublicKeyByAddress(this.contract, this.to);
+          this.isEncryption = !!publicKey;
+          return publicKey;
         }
         return undefined;
       },
