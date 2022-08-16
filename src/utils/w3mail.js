@@ -234,11 +234,11 @@ export async function getEmailMessageByUuid(contract, account, isEncryption, typ
         const content = result.substr(2, result.length - 1);
         const data = Buffer.from(content, 'hex');
         let toKeyData;
-        if (types === 1) {
+        if (types === '1') {
             // inbox [112 - 224)
-            toKeyData = data.slice(126, 224);
+            toKeyData = data.slice(112, 224);
         } else {
-            // sendKey [0 - 126)
+            // sendKey [0 - 112)
             toKeyData = data.slice(0, 112);
         }
         const encryptKey = await decryptEmailKey(account, toKeyData);
