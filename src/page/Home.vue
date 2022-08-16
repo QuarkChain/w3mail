@@ -2,11 +2,10 @@
   <div class="home">
     <img class="home-logo" src="../assets/home.png"/>
     <p class="message">
-      Your web3 email<br/>
-      Send, encrypt and receive email with wallet
+      Fully Decentralized and Safe Email Service
     </p>
     <el-button type="warning" round class="home-btn" @click="onOpenEmail">
-      Try it now
+      Launch App
     </el-button>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="title">
-      Register you Web3 Email!
+      Register Your W3Mail
     </div>
     <el-card class="card">
       <div>
@@ -12,13 +12,13 @@
         <el-carousel ref="carousel" :autoplay="false" arrow="never" indicator-position="none">
           <el-carousel-item>
             <div class="card-item">
-              <p class="item-title">Public Key</p>
+              <p class="item-title">Get Public Key</p>
               <p class="item-message">
-                You are creating encrypted for the first time. You need to <br/>
-                provide your public key for p2p encryption, no gas fee.
+                Your public key is needed so that others can send encrypted Emails to you. <br/>
+                You need to confirm it in your Metamask and it will not cost you any gas fee.
               </p>
               <el-button type="warning" round class="home-btn" @click="questPublicKey" :disabled="!this.account">
-                Get Public Key
+                Request
               </el-button>
             </div>
           </el-carousel-item>
@@ -26,7 +26,7 @@
             <div class="card-item">
               <p class="item-title">Register W3Mail</p>
               <p class="item-message">
-                Submit the public key and other information to the smart contract for registration.
+                Submit the public key and related information to the Web3Q for registration.
               </p>
               <el-button type="warning" round class="home-btn" :disabled="!this.account" :loading="showLoading"
                          @click="onRegister">

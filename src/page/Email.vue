@@ -197,7 +197,6 @@ export default {
 .header-menu {
   background: #ffffff;
   border-radius: 5px;
-  height: 8vh;
   margin: 0 20px;
 }
 

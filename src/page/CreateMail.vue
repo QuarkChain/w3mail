@@ -12,39 +12,40 @@
                     :fileContract="contract" :driveKey="this.driveKey"
                     :emailUuid="this.uuid" :onSuccess="onSuccess" :onDelete="onDelete"/>
     </div>
-    <mavon-editor language="en" defaultOpen="edit" :subfield="false"
-                  :boxShadow="false" :toolbars="toolbar"
-                  class="mkd-editor" @change="onChange"/>
+    <quill-editor v-model="message" ref="myQuillEditor" class="mkd-editor" :options="editorOption" />
     <el-button class="home-btn" :loading="this.sending" @click="onSend">Send</el-button>
   </el-col>
 </template>
 
 <script>
 import {ethers} from "ethers";
-import { mavonEditor } from 'mavon-editor';
+import { quillEditor } from 'vue-quill-editor';
+import {v4 as uuidv4} from "uuid";
 import W3qDeployer from '@/components/w3q-deployer.vue';
 import {getPublicKeyByAddress, sendEmail} from "@/utils/w3mail";
-import {v4 as uuidv4} from "uuid";
 
-import 'mavon-editor/dist/css/index.css';
+import 'quill/dist/quill.core.css';
+import 'quill/dist/quill.snow.css';
+import 'quill/dist/quill.bubble.css';
 
 export default {
   name: 'Email',
   data: () => {
     return {
-      toolbar: {
-        bold: true, // 粗体
-        italic: true, // 斜体
-        header: true, // 标题
-        underline: true, // 下划线
-        strikethrough: true, // 中划线
-        superscript: true, // 上角标
-        subscript: true, // 下角标
-        quote: true, // 引用
-        ol: true, // 有序列表
-        ul: true, // 无序列表
-        link: true, // 链接
-        code: true, // code
+      editorOption: {
+        modules: {
+          toolbar: [
+            ['bold', 'italic', 'underline', 'strike'],
+            ['link', 'image'],
+            ['blockquote', 'code-block'],
+            [{'list': 'ordered'}, {'list': 'bullet'}],
+            [{'align': []}],
+            [{'header': 1}, {'header': 2}],               // custom button values
+            [{'color': []}, {'background': []}],          // dropdown with defaults from theme
+            [{'header': [1, 2, 3, 4, 5, 6, false]}],
+            [{'font': []}],
+          ]
+        },
       },
       subject: '',
       to: '',
@@ -56,8 +57,8 @@ export default {
     }
   },
   components: {
-    mavonEditor,
-    W3qDeployer
+    W3qDeployer,
+    quillEditor
   },
   computed: {
     contract() {
@@ -93,9 +94,6 @@ export default {
     },
   },
   methods: {
-    onChange(msg) {
-      this.message = msg;
-    },
     async onSend() {
       if (!this.driveKey) {
         return;
@@ -155,8 +153,10 @@ export default {
   margin-top: 15px;
 }
 .mkd-editor {
-  height: 312px !important;
   margin-top: 15px;
+}
+.mkd-editor >>> .ql-editor {
+  height: 265px !important;
 }
 .home-btn {
   background-color: #486FAE;
