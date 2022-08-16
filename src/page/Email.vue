@@ -1,8 +1,8 @@
 <template>
   <el-container class="home">
     <el-aside width="200px" class="email-menu">
-      <el-button v-if="!this.driveKey" class="home-btn" @click="onLogin">Login</el-button>
-      <el-button v-else-if="!this.publicKey" class="home-btn" @click="onRegister">Register</el-button>
+      <el-button v-if="!this.publicKey" class="home-btn" @click="onRegister">Register</el-button>
+      <el-button v-else-if="!this.driveKey" class="home-btn" @click="onLogin">Login</el-button>
       <el-button v-else class="home-btn" @click="openNewMail">New Email</el-button>
       <el-menu :default-active="this.currentIndex" @select="handleSelect">
         <el-menu-item index="1" class="menu-item">
@@ -89,6 +89,17 @@ export default {
     },
     publicKey() {
       return this.$store.state.publicKey;
+    },
+    account() {
+      return this.$store.state.account;
+    }
+  },
+  watch: {
+    account() {
+      if (this.currentIndex === '0' || this.currentIndex === '100') {
+        this.currentIndex = "1";
+        this.$router.push({path: '/email', query: {index: this.currentIndex}});
+      }
     }
   },
   methods: {
@@ -96,7 +107,7 @@ export default {
     async onLogin() {
       let driveKey = await loginBySignature();
       if (driveKey) {
-        sessionStorage.setItem(this.currentAccount + "/driveKey", driveKey);
+        sessionStorage.setItem(this.account + "/driveKey", driveKey);
         this.setDriveKey(driveKey);
       } else {
         this.$message.error('Login failed!!');

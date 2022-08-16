@@ -18,7 +18,7 @@
 <script>
 import { mapActions } from "vuex";
 import { chains } from '@/store/state';
-import {getPublicKeyByAddress, loginBySignature} from "@/utils/w3mail";
+import {getPublicKeyByAddress} from "@/utils/w3mail";
 
 export class UnsupportedChainIdError extends Error {
   constructor() {
@@ -173,15 +173,8 @@ export default {
       }
       this.setPublicKey(publicKey);
 
+      // is register
       let driveKey = sessionStorage.getItem(this.currentAccount + "/driveKey");
-      if (!driveKey) {
-        driveKey = await loginBySignature();
-        if (driveKey) {
-          sessionStorage.setItem(this.currentAccount + "/driveKey", driveKey);
-        } else {
-          this.$message.error('Login failed!!');
-        }
-      }
       this.setDriveKey(driveKey);
     }
   },
