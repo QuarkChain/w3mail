@@ -12,7 +12,7 @@ The project is implemented by two contracts, the front-end contract w3mail.w3q a
 
 ### w3mail.w3q
 [w3mail.w3q](https://web3q.io/w3ns.w3q/#/domains/w3mail.w3q) is a w3ns domain name, which maps a contract address, 
-the contract is a FlatDirectory contract that stores w3drive's website files.
+the contract is a FlatDirectory contract that stores w3mail's website files.
 
 FlatDirectory is the implementation of the web3 storage data contract. Click [here](https://docs.web3q.io/tutorials/migrate-your-website-to-web3q-in-5-mins) for details.
 
@@ -34,7 +34,7 @@ export async function getPublicKey(account) {
 #### Register
 When sending an encrypted email to an address, the symmetric key for encrypting the email also needs to be sent to the address,  and the user can use this key to decrypt the email content after receiving the email. The secret key can only be viewed by the recipient, so it needs to be encrypted with the recipient's public key.
 
-When a user registers, the user's public key is submitted to the blockchain, and other users can send encrypted emails to the user.
+When a user registers, his public key is submitted to the blockchain, allowing other users to send him encrypted emails.
 ```
 export async function register(contract, publicKey) {
     publicKey = '0x' + Buffer.from(publicKey, 'base64').toString('hex');
