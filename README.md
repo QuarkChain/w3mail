@@ -1,24 +1,297 @@
-# w3ns-frontend
+# W3Mail
 
-## Project setup
+## Introduction
+Based on the Web3Q chain, this project implements a decentralized website. Anyone can send mail to any address without permission.
+   
+The official home page of the W3Mail project is https://web3q.io/w3mail.w3q/.
+
+
+## Structure
+The front-end code and all data of this project are stored on the blockchain to achieve complete decentralization of the website.
+The project is implemented by two contracts, the front-end contract w3mail.w3q and the function contract SimpleW3Mail.
+
+### w3mail.w3q
+[w3mail.w3q](https://web3q.io/w3ns.w3q/#/domains/w3mail.w3q) is a w3ns domain name, which maps a contract address, 
+the contract is a FlatDirectory contract that stores w3drive's website files.
+
+FlatDirectory is the implementation of the web3 storage data contract. Click [here](https://docs.web3q.io/tutorials/migrate-your-website-to-web3q-in-5-mins) for details.
+
+#### Public key
+The email is encrypted with a symmetric key, and the symmetric key will be encrypted with the recipient's public key and uploaded to the blockchain.
 ```
-yarn install
+export async function getPublicKey(account) {
+    try {
+        return await window.ethereum.request({
+            method: 'eth_getEncryptionPublicKey',
+            params: [account],
+        });
+    } catch (e) {
+        return undefined;
+    }
+}
 ```
 
-### Compiles and hot-reloads for development
+#### Register
+When sending an encrypted email to an address, the symmetric key for encrypting the email also needs to be sent to the address,  and the user can use this key to decrypt the email content after receiving the email. The secret key can only be viewed by the recipient, so it needs to be encrypted with the recipient's public key.
+
+When a user registers, the user's public key is submitted to the blockchain, and other users can send encrypted emails to the user.
 ```
-yarn serve
+export async function register(contract, publicKey) {
+    publicKey = '0x' + Buffer.from(publicKey, 'base64').toString('hex');
+    const fileContract = FileContract(contract);
+    const tx = await fileContract.register(publicKey);
+    return await tx.wait();
+}
 ```
 
-### Compiles and minifies for production
+#### Secret key seed
+Sign the user address, network id, url, current timestamp and other content strings to obtain the signature information, 
+and use the signature as the key seed.
 ```
-yarn build
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const message = new SiweMessage({
+        domain: 'https://galileo.web3q.io/',
+        address,
+        statement,
+        uri: 'https://galileo.web3q.io/w3mail.w3q/',
+        version: '1',
+        chainId: '1'
+});
+return await signer.signMessage(message);
 ```
 
-### Lints and fixes files
+#### Mail key
+The key seed derives the root key via the HKDF function. 
+
+Each mail has a unique id, using the root key and the mail id can derive a key that is used to encrypt the mail.
 ```
-yarn lint
+export const deriveFileKey = async (rootKey, mailId) => {
+	const iv = Buffer.from(rootKey, 'base64');
+	const info = Buffer.from(parse(mailId));
+	const fileKey = hkdf(iv, keyByteLength, {info, hash: keyHash});
+	return urlEncodeHashKey(mailId);
+}
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+#### Encrypt Mail key
+Use the util of metamask to encrypt the mail key with the public key
+```
+import {encrypt} from '@metamask/eth-sig-util';
+
+function encryptEmailKey(publicKey, data) {
+    // Returned object contains 4 properties: version, ephemPublicKey, nonce, ciphertext
+    // Each contains data encoded using base64, version is always the same string
+    const enc = encrypt({
+        publicKey: publicKey,
+        data: ascii85.encode(data).toString(),
+        version: 'x25519-xsalsa20-poly1305',
+    });
+    return Buffer.concat([
+        Buffer.from(enc.ephemPublicKey, 'base64'),
+        Buffer.from(enc.nonce, 'base64'),
+        Buffer.from(enc.ciphertext, 'base64'),
+    ]);
+}
+```
+
+#### Send Mail
+Generate a mail key, encrypt the mail key with the sender's and recipient's public keys, and then use the key to encrypt the mail content.
+
+The length of encrypted mail keys is also fixed at 112 bits, so they can be uploaded to the blockchain as a whole before the content of the mail.
+```
+export async function sendEmail(emailId, driveKey, sendPublicKey, receivePublicKey, toAddress, title, message, fileId) {
+    const emailKey = await deriveFileKey(driveKey, emailId);
+    // encrypt email key by receive user public key
+    const encryptSendKey = encryptEmailKey(sendPublicKey, Buffer.from(emailKey, 'base64'));
+    const encryptReceiveKey = encryptEmailKey(receivePublicKey, Buffer.from(emailKey, 'base64'));
+    // encrypt content
+    const encryptResult = await fileEncrypt(emailKey, message);
+    // data
+    const encryptContent = Buffer.concat([
+        encryptSendKey, // 112
+        encryptReceiveKey, // 112
+        Buffer.from(encryptResult.cipherIV, 'base64'), // 12
+        encryptResult.data,
+    ]);
+    hexData = '0x' + encryptContent.toString('hex');
+
+    const fileContract = FileContract(controller);
+    const tx = await fileContract.sendEmail(toAddress, true, emailId, title, hexData, fileId, {
+        value: ethers.utils.parseEther(cost.toString())
+    });
+    return await tx.wait();
+}
+```
+
+#### Decrypt Mail Key
+```
+async function decryptMailKey(account, data) {
+    // Reconstructing the original object outputed by encryption
+    const structuredData = {
+        version: 'x25519-xsalsa20-poly1305',
+        ephemPublicKey: data.slice(0, 32).toString('base64'),
+        nonce: data.slice(32, 56).toString('base64'),
+        ciphertext: data.slice(56).toString('base64'),
+    };
+    // Convert data to hex string required by MetaMask
+    const ct = `0x${Buffer.from(JSON.stringify(structuredData), 'utf8').toString('hex')}`;
+    // Send request to MetaMask to decrypt the ciphertext
+    // Once again application must have acces to the account
+    const decrypt = await window.ethereum.request({
+        method: 'eth_decrypt',
+        params: [ct, account],
+    });
+    // Decode the base85 to final bytes
+    return ascii85.decode(decrypt);
+}
+```
+
+#### Read Mail
+Get the mail content from the contract, intercept the encrypted mail key in the content header according to the sender or recipient, 
+and call "metamask" to decrypt the mail key.
+```
+export async function getEmailMessageByUuid(contract, account, isEncryption, types, fromMail, uuid) {
+    const fileContract = FileContract(contract);
+    const content = await fileContract.getEmailContent(fromMail, uuid, 0);
+    const data = Buffer.from(content, 'hex');
+    let mailKeyData;
+    if (types === '1') {
+        mailKeyData = data.slice(112, 224); // inbox [112 - 224)
+    } else {
+        mailKeyData = data.slice(0, 112); // sendKey [0 - 112)
+    }
+    const encryptKey = await decryptMailKey(account, mailKeyData);
+    const iv = data.slice(224, 236).toString('base64');
+    const contentData = data.slice(236, data.length);
+    const bf = await fileDecrypt(iv, encryptKey.toString('base64'), contentData);
+    return {
+        key: encryptKey.toString('base64'),
+        content: bf.toString()
+    };
+}
+```
+<br>
+
+
+### SimpleW3Mail
+SimpleW3Mail is used to manage user mails.
+
+#### Storage structure
+```
+contract SimpleW3Mail {
+    struct User {
+        bytes32 publicKey;
+        address fdContract;
+    
+        Email[] sentEmails;
+        mapping(bytes => uint256) sentEmailIds;
+        Email[] inboxEmails;
+        mapping(bytes => uint256) inboxEmailIds;
+    
+        mapping(bytes => File) files;
+    }
+    mapping(address => User) userInfos; // // User upload info mapping
+}
+```
+
+#### Register
+Before sending mails, you need to submit public key for registration, and receive a welcome mail.
+```
+function register(bytes32 publicKey) public {
+    User storage user = userInfos[msg.sender];
+    require(user.fdContract == address(0), "Address is registered");
+    user.publicKey = publicKey;
+    FlatDirectory fileContract = new FlatDirectory(0);
+    user.fdContract = address(fileContract);
+
+    // default email
+    Email memory dEmail;
+    dEmail.time = block.timestamp;
+    dEmail.from = address(this);
+    dEmail.to = msg.sender;
+    dEmail.uuid = 'default-email';
+    dEmail.title = 'Welcome to W3Mail!';
+    // add email
+    user.inboxEmails.push(dEmail);
+    user.inboxEmailIds['default-email'] = 1;
+}
+```
+
+#### Send
+```
+function sendEmail(
+    address toAddress, 
+    bool isEncryption, 
+    bytes memory uuid, 
+    bytes memory title, 
+    bytes calldata encryptData, 
+    bytes memory fileUuid
+)
+    public
+    payable
+    isRegistered
+{
+    User storage toInfo = userInfos[toAddress];
+    require(!isEncryption || toInfo.fdContract != address(0), "Unregistered users can only send unencrypted emails");
+
+    User storage fromInfo = userInfos[msg.sender];
+    // create email
+    Email memory email;
+    email.isEncryption = isEncryption;
+    ...
+    email.fileUuid = fileUuid;
+
+    // add email
+    fromInfo.sentEmails.push(email);
+    fromInfo.sentEmailIds[uuid] = fromInfo.sentEmails.length;
+    toInfo.inboxEmails.push(email);
+    toInfo.inboxEmailIds[uuid] = toInfo.inboxEmails.length;
+
+    // write email
+    FlatDirectory fileContract = FlatDirectory(fromInfo.fdContract);
+    fileContract.writeChunk{value: msg.value}(getNewName(uuid, 'message'), 0, encryptData);
+}
+```
+
+#### Inbox
+```
+function getInboxEmails() public view
+    returns (
+        bool[] memory isEncryptions,
+        uint256[] memory times,
+        address[] memory fromMails,
+        address[] memory toMails,
+        bytes[] memory uuids,
+        bytes[] memory titles,
+        bytes[] memory fileUuids,
+        bytes[] memory fileNames
+        )
+    {
+        User storage info = userInfos[msg.sender];
+        uint256 length = info.inboxEmails.length;
+        isEncryptions = new bool[](length);
+        ...
+        fileNames = new bytes[](length);
+        for (uint256 i; i < length; i++) {
+            isEncryptions[i] = info.inboxEmails[i].isEncryption;
+            ...
+            fileUuids[i] = info.inboxEmails[i].fileUuid;
+            fileNames[i] = userInfos[fromMails[i]].files[fileUuids[i]].name;
+        }
+    }
+```
+
+#### Content of Mail
+The email context and attachments are stored in the sender's contract. If the sender deletes the email, 
+the recipient will no longer be able to see the email.
+```
+function getEmailContent(address fromEmail, bytes memory uuid, uint256 chunkId) public view returns(bytes memory data) {
+    if(fromEmail == address(this) &&  keccak256(uuid) == keccak256('default-email')) {
+        // default mail context
+        return bytes(defaultEmail);
+    }
+    FlatDirectory fileContract = FlatDirectory(userInfos[fromEmail].fdContract);
+    (data, ) = fileContract.readChunk(getNewName(uuid, bytes('message')), chunkId);
+}
+```
