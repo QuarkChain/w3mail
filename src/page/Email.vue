@@ -2,7 +2,6 @@
   <el-container class="home">
     <el-aside width="200px" class="email-menu">
       <el-button v-if="!this.publicKey" class="home-btn" @click="onRegister">Register</el-button>
-      <el-button v-else-if="!this.driveKey" class="home-btn" @click="onLogin">Login</el-button>
       <el-button v-else class="home-btn" @click="openNewMail">New Email</el-button>
       <el-menu :default-active="this.currentIndex" @select="handleSelect">
         <el-menu-item index="1" class="menu-item">
@@ -58,7 +57,6 @@
 import CreateMail from "@/page/CreateMail.vue";
 import EmailList from "@/page/EmailList.vue";
 import EmailInfo from "@/page/EmailInfo.vue";
-import {loginBySignature} from "@/utils/w3mail";
 import {mapActions} from "vuex";
 
 export default {
@@ -104,15 +102,6 @@ export default {
   },
   methods: {
     ...mapActions(["setDriveKey"]),
-    async onLogin() {
-      let driveKey = await loginBySignature();
-      if (driveKey) {
-        sessionStorage.setItem(this.account + "/driveKey", driveKey);
-        this.setDriveKey(driveKey);
-      } else {
-        this.$message.error('Login failed!!');
-      }
-    },
     onRegister() {
       this.$router.push({path: '/register'});
     },

@@ -8,7 +8,6 @@
         <el-steps :active="active" finish-status="success" align-center>
           <el-step title="Step 1"></el-step>
           <el-step title="Step 2"></el-step>
-          <el-step title="Step 3"></el-step>
         </el-steps>
         <el-carousel ref="carousel" :autoplay="false" arrow="never" indicator-position="none">
           <el-carousel-item>
@@ -35,17 +34,6 @@
               </el-button>
             </div>
           </el-carousel-item>
-          <el-carousel-item>
-            <div class="card-item">
-              <p class="item-title">Login W3Mail</p>
-              <p class="item-message">
-                A random root private key needs to be generated from your signature of a message, <br/>and it will be used for encrypting the emails for this login session.
-              </p>
-              <el-button type="warning" round class="home-btn" @click="onLogin">
-                Login
-              </el-button>
-            </div>
-          </el-carousel-item>
         </el-carousel>
       </div>
     </el-card>
@@ -54,7 +42,7 @@
 
 <script>
 import {mapActions} from "vuex";
-import {getPublicKey, getPublicKeyByAddress, loginBySignature, register} from "@/utils/w3mail";
+import {getPublicKey, getPublicKeyByAddress, register} from "@/utils/w3mail";
 
 export default {
   name: 'Register',
@@ -106,22 +94,11 @@ export default {
       if (state) {
         this.setPublicKey(this.publicKey);
         sessionStorage.setItem(this.account + "/publicKey", this.publicKey);
-        this.active = this.active + 1;
-        this.$refs.carousel.setActiveItem(this.active);
+        await this.$router.push({path: "/email"});
       } else {
         this.$message.error('Register Fail!');
       }
     },
-    async onLogin() {
-      let driveKey = await loginBySignature();
-      if (driveKey) {
-        this.setDriveKey(driveKey);
-        sessionStorage.setItem(this.account + "/driveKey", driveKey);
-        await this.$router.push({path: "/email"});
-      } else {
-        this.$message.error('Login failed!!');
-      }
-    }
   },
 }
 </script>

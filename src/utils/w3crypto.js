@@ -12,9 +12,9 @@ function urlEncodeHashKey(keyBuffer) {
 }
 
 // Derive a key from the user's id
-export const deriveDriveKey = async (signature, dataEncryptionKey) => {
+export const deriveDriveKey = async (seed, dataEncryptionKey) => {
 	const info = dataEncryptionKey;
-	const driveKey = hkdf(Buffer.from(signature), keyByteLength, {info, hash: keyHash});
+	const driveKey = hkdf(Buffer.from(seed), keyByteLength, {info, hash: keyHash});
 	return urlEncodeHashKey(driveKey);
 }
 

@@ -1,6 +1,5 @@
 import {encrypt} from '@metamask/eth-sig-util';
 import {ethers} from "ethers";
-import {SiweMessage} from 'siwe';
 import {
     deriveDriveKey,
     deriveFileKey,
@@ -15,35 +14,10 @@ const ascii85 = require('ascii85');
 const stringToHex = (s) => ethers.utils.hexlify(ethers.utils.toUtf8Bytes(s));
 const hexToString = (h) => ethers.utils.toUtf8String(h);
 
-function createSignMessage(address, statement) {
-    const message = new SiweMessage({
-        domain: 'https://galileo.web3q.io/',
-        address,
-        statement,
-        uri: 'https://galileo.web3q.io/w3mail.w3q/',
-        version: '1',
-        chainId: '1'
-    });
-    return message.prepareMessage();
-}
-
-async function signInfo() {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    try {
-        const message = createSignMessage(await signer.getAddress(), 'Login W3Mail.');
-        return await signer.signMessage(message);
-    } catch (e) {
-        return undefined;
-    }
-}
-
-export async function loginBySignature() {
-    const signature = await signInfo();
-    if (!signature) {
-        return undefined;
-    }
-    return await deriveDriveKey(signature, 'password');
+export async function createRootKey() {
+    const seed = new Uint16Array(8);
+    window.crypto.getRandomValues(seed);
+    return await deriveDriveKey(seed.buffer, 'password');
 }
 
 export async function getPublicKey(account) {

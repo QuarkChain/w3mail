@@ -18,7 +18,7 @@
 <script>
 import { mapActions } from "vuex";
 import { chains } from '@/store/state';
-import {getPublicKeyByAddress} from "@/utils/w3mail";
+import {getPublicKeyByAddress, createRootKey} from "@/utils/w3mail";
 
 export class UnsupportedChainIdError extends Error {
   constructor() {
@@ -175,6 +175,9 @@ export default {
 
       // is register
       let driveKey = sessionStorage.getItem(this.currentAccount + "/driveKey");
+      if (!driveKey) {
+        driveKey = await createRootKey();
+      }
       this.setDriveKey(driveKey);
     }
   },
