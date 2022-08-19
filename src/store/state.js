@@ -4,5 +4,5 @@ export const chains = [{
 },
 {
   chainID: '0xd06',
-  EmailController:'0x631D3f25A5e72c0a4d05B95274fa1E2d04e38773',
+  EmailController:'0x3E85B2b3B49e8d9276dCA835A1bF74E9CFF56F03',
 }];
