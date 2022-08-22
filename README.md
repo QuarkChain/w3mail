@@ -2,8 +2,8 @@
 
 ## Introduction
 W3Mail is a decentralized email based on the Web3Q chain. This email enables anyone to send or receive mail without permission. 
-Emails are divided into plaintext emails and encrypted emails. Plaintext emails can be sent to any wallet address, 
-while encrypted emails can only be sent to wallet addresses that know the public key.
+There are two types of emails: plaintext and ciphertext. Plaintext emails can be sent to any wallet address, while ciphertext emails 
+can only be sent to wallet addresses that have submitted public keys.
    
 The official home page of the W3Mail project is https://web3q.io/w3mail.w3q/.
 
