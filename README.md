@@ -1,7 +1,9 @@
 # W3Mail
 
 ## Introduction
-Based on the Web3Q chain, this project implements a decentralized website. Anyone can send mail to any address without permission.
+W3Mail is a decentralized email based on the Web3Q chain. This email enables anyone to send or receive mail without permission. 
+Emails are divided into plaintext emails and encrypted emails. Plaintext emails can be sent to any wallet address, 
+while encrypted emails can only be sent to wallet addresses that know the public key.
    
 The official home page of the W3Mail project is https://web3q.io/w3mail.w3q/.
 
@@ -16,8 +18,11 @@ the contract is a FlatDirectory contract that stores w3mail's website files.
 
 FlatDirectory is the implementation of the web3 storage data contract. Click [here](https://docs.web3q.io/tutorials/migrate-your-website-to-web3q-in-5-mins) for details.
 
+The flow chart is as follows:
+![](public/diagram.jpg)
+
 #### Public key
-The email is encrypted with a symmetric key, and the symmetric key will be encrypted with the recipient's public key and uploaded to the blockchain.
+Emails are encrypted using a symmetric key, which needs to be encrypted with the public key.
 ```
 export async function getPublicKey(account) {
     try {
@@ -32,8 +37,6 @@ export async function getPublicKey(account) {
 ```
 
 #### Register
-When sending an encrypted email to an address, the symmetric key for encrypting the email also needs to be sent to the address,  and the user can use this key to decrypt the email content after receiving the email. The secret key can only be viewed by the recipient, so it needs to be encrypted with the recipient's public key.
-
 When a user registers, his public key is submitted to the blockchain, allowing other users to send him encrypted emails.
 ```
 export async function register(contract, publicKey) {
@@ -44,38 +47,20 @@ export async function register(contract, publicKey) {
 }
 ```
 
-#### Secret key seed
-Sign the user address, network id, url, current timestamp and other content strings to obtain the signature information, 
-and use the signature as the key seed.
-```
-const provider = new ethers.providers.Web3Provider(window.ethereum);
-const signer = provider.getSigner();
-const message = new SiweMessage({
-        domain: 'https://galileo.web3q.io/',
-        address,
-        statement,
-        uri: 'https://galileo.web3q.io/w3mail.w3q/',
-        version: '1',
-        chainId: '1'
-});
-return await signer.signMessage(message);
-```
-
 #### Mail key
-The key seed derives the root key via the HKDF function. 
-
-Each mail has a unique id, using the root key and the mail id can derive a key that is used to encrypt the mail.
+Each email has a unique id, and the id is used to generate a random mail key to encrypt the email.
 ```
-export const deriveFileKey = async (rootKey, mailId) => {
-	const iv = Buffer.from(rootKey, 'base64');
+export const deriveMailKey = async (rootKey, mailId) => {
+    const seed = new Uint16Array(8);
+    window.crypto.getRandomValues(seed);
 	const info = Buffer.from(parse(mailId));
-	const fileKey = hkdf(iv, keyByteLength, {info, hash: keyHash});
+	const fileKey = hkdf(seed.buffer, keyByteLength, {info, hash: keyHash});
 	return urlEncodeHashKey(mailId);
 }
 ```
 
 #### Encrypt Mail key
-Use the util of metamask to encrypt the mail key with the public key
+Use the util of metamask to encrypt the mail key with the public key.
 ```
 import {encrypt} from '@metamask/eth-sig-util';
 
@@ -98,15 +83,15 @@ function encryptEmailKey(publicKey, data) {
 #### Send Mail
 Generate a mail key, encrypt the mail key with the sender's and recipient's public keys, and then use the key to encrypt the mail content.
 
-The length of encrypted mail keys is also fixed at 112 bits, so they can be uploaded to the blockchain as a whole before the content of the mail.
+The length of encrypted mail keys is fixed at 112 bits, so they can be uploaded to the blockchain as a whole before the content of the mail.
 ```
 export async function sendEmail(emailId, driveKey, sendPublicKey, receivePublicKey, toAddress, title, message, fileId) {
-    const emailKey = await deriveFileKey(driveKey, emailId);
+    const emailKey = await deriveMailKey(driveKey, emailId);
     // encrypt email key by receive user public key
     const encryptSendKey = encryptEmailKey(sendPublicKey, Buffer.from(emailKey, 'base64'));
     const encryptReceiveKey = encryptEmailKey(receivePublicKey, Buffer.from(emailKey, 'base64'));
     // encrypt content
-    const encryptResult = await fileEncrypt(emailKey, message);
+    const encryptResult = await mailEncrypt(emailKey, message);
     // data
     const encryptContent = Buffer.concat([
         encryptSendKey, // 112
