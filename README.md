@@ -50,7 +50,7 @@ export async function register(contract, publicKey) {
 #### Mail key
 Each email has a unique id, and the id is used to generate a random mail key to encrypt the email.
 ```
-export const deriveMailKey = async (rootKey, mailId) => {
+export async deriveMailKey(mailId) {
     const seed = new Uint16Array(8);
     window.crypto.getRandomValues(seed);
     const info = Buffer.from(parse(mailId));
