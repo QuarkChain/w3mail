@@ -136,7 +136,7 @@ async function decryptMailKey(account, data) {
 Get the mail content from the contract, intercept the encrypted mail key in the content header according to the sender or recipient, 
 and call "metamask" to decrypt the mail key.
 ```
-export async function getEmailMessageByUuid(contract, account, isEncryption, types, fromMail, uuid) {
+export async function getEmailMessageByUuid(contract, account, types, fromMail, uuid) {
     const fileContract = FileContract(contract);
     const content = await fileContract.getEmailContent(fromMail, uuid, 0);
     const data = Buffer.from(content, 'hex');
@@ -144,7 +144,7 @@ export async function getEmailMessageByUuid(contract, account, isEncryption, typ
     if (types === '1') {
         mailKeyData = data.slice(112, 224); // inbox [112 - 224)
     } else {
-        mailKeyData = data.slice(0, 112); // sendKey [0 - 112)
+        mailKeyData = data.slice(0, 112); // sent [0 - 112)
     }
     const encryptKey = await decryptMailKey(account, mailKeyData);
     const iv = data.slice(224, 236).toString('base64');
