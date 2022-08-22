@@ -22,7 +22,7 @@ The flow chart is as follows:
 ![](public/diagram.jpg)
 
 #### Public key
-Emails are encrypted using a symmetric key, which needs to be encrypted with the public key.
+Emails are encrypted using a symmetric key, a symmetric key needs to be encrypted with the public key.
 ```
 export async function getPublicKey(account) {
     try {
@@ -53,14 +53,14 @@ Each email has a unique id, and the id is used to generate a random mail key to 
 export const deriveMailKey = async (rootKey, mailId) => {
     const seed = new Uint16Array(8);
     window.crypto.getRandomValues(seed);
-	const info = Buffer.from(parse(mailId));
-	const fileKey = hkdf(seed.buffer, keyByteLength, {info, hash: keyHash});
-	return urlEncodeHashKey(mailId);
+    const info = Buffer.from(parse(mailId));
+    const fileKey = hkdf(seed.buffer, keyByteLength, {info, hash: keyHash});
+    return urlEncodeHashKey(mailId);
 }
 ```
 
 #### Encrypt Mail key
-Use the util of metamask to encrypt the mail key with the public key.
+Call the encryption function in "metamask" to encrypt the mail key with the public key.
 ```
 import {encrypt} from '@metamask/eth-sig-util';
 
@@ -81,9 +81,9 @@ function encryptEmailKey(publicKey, data) {
 ```
 
 #### Send Mail
-Generate a mail key, encrypt the mail key with the sender's and recipient's public keys, and then use the key to encrypt the mail content.
+Generate the mail key, encrypt the mail key with the public key of the sender and recipient, and encrypt the content of the mail with the mail key.
 
-The length of encrypted mail keys is fixed at 112 bits, so they can be uploaded to the blockchain as a whole before the content of the mail.
+The length of the encrypted mail key is fixed at 112 bits, and they are spliced before the content of the mail and uploaded to the blockchain.
 ```
 export async function sendEmail(emailId, driveKey, sendPublicKey, receivePublicKey, toAddress, title, message, fileId) {
     const emailKey = await deriveMailKey(driveKey, emailId);
