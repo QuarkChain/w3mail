@@ -16,7 +16,8 @@ The flow chart is as follows:
 ![](public/diagram.jpg)
 
 #### w3mail.w3q
-[w3mail.w3q](https://web3q.io/w3ns.w3q/#/domains/w3mail.w3q) is a w3ns domain name, and the domain name corresponds to a FlatDirectory contract address.
+[w3mail.w3q](https://web3q.io/w3ns.w3q/#/domains/w3mail.w3q) is a w3ns domain name, and the domain name corresponds to a FlatDirectory contract address, 
+front-end code is all stored in this contract.
 
 FlatDirectory is the implementation of the web3 storage data contract. Click [here](https://docs.web3q.io/tutorials/migrate-your-website-to-web3q-in-5-mins) for details.
 
