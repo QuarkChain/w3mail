@@ -105,7 +105,7 @@ async function decryptMailKey(account, data) {
 ```
 
 #### Read Mail
-Obtain encrypted data from the contract, intercept [0,112) or [112,224) bits of data in the header, and decrypt it into Mail Key.
+Obtain encrypted data from the contract, intercept [0,112) or [112,224) bits of data in the encrypted data, and decrypt it into Mail Key.
 Then use the Mail Key to decrypt the content of the mail after 236 bits.
 ```
 const contract = MailContract(contract);
