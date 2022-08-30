@@ -1,15 +1,13 @@
 # W3Mail
 
 ## Introduction
-W3Mail is a decentralized mail on the Web3Q chain that can send mail to wallet addresses. There are two types of emails: plaintext and ciphertext.
-Plaintext emails can be sent to any address, while ciphertext emails can only be sent to addresses that know the public key.
+W3Mail is a fully decentralized email service on the Web3Q chain. Users can send/receive email by wallet addresses, and the email contents are also stored on chain in plaintext or encrypted form. Plaintext emails can be sent to any address, while encrypted emails can only be sent to addresses that has registered the public key on chain.
    
 The official home page of the W3Mail project is https://web3q.io/w3mail.w3q/.
 
 
 ## How does it work?
-W3Mail is a decentralized project. Its front-end code is stored in a smart contract, and there is another contract that manages Emails. 
-All data is stored on the blockchain to achieve a full decentralization project.
+W3Mail is a fully decentralized dApp which means the front-end code, back-end (smart contract) code and users' data (email content) are all stored on chain. 
 
 ### Front-end
 The flow chart is as follows:
@@ -21,19 +19,8 @@ front-end code is all stored in this contract.
 
 FlatDirectory is the implementation of the web3 storage data contract. Click [here](https://docs.web3q.io/tutorials/migrate-your-website-to-web3q-in-5-mins) for details.
 
-#### Public key
-Emails are encrypted using a symmetric key, which needs to be encrypted with the public key before being sent to the recipient.
-```
-export async function getPublicKey(account) {
-    return await window.ethereum.request({
-        method: 'eth_getEncryptionPublicKey',
-        params: [account],
-    });
-}
-```
-
 #### Mail key
-Each email has a random id, and a key is derived from the id. This key is the Mail Key, which is used to encrypt the content of the email.
+Each email has a random id, and an AES256 key which is derived from the id. This AES256 key is the Mail Key, which is used to encrypt the content of the email.
 ```
 export async deriveMailKey(mailId) {
     const seed = new Uint16Array(8);
@@ -43,7 +30,16 @@ export async deriveMailKey(mailId) {
 }
 ```
 
-#### Encrypt Mail key
+#### Public key
+The email key is encrypted by the email receiver's public key and will be sent to the email receiver with the contents.
+```
+export async function getPublicKey(account) {
+    return await window.ethereum.request({
+        method: 'eth_getEncryptionPublicKey',
+        params: [account],
+    });
+}
+```
 Call the encryption function in "Metamask" to encrypt the Mail Key with the public key.
 ```
 import {encrypt} from '@metamask/eth-sig-util';
@@ -85,8 +81,8 @@ const contract = MailContract(controller);
 await contract.sendEmail(toAddress, true, emailId, title, encryptContent, fileId);
 ```
 
-#### Decrypt Mail Key
-Decrypt the Mail Key with the private key of the "Metamask" wallet.
+#### Read Mail
+Obtain encrypted data from the contract, intercept [0,112) or [112,224) bits of data in the encrypted data, and decrypt it into Mail Key with the private key of the "Metamask" wallet.
 ```
 async function decryptMailKey(account, data) {
     const structuredData = {
@@ -102,10 +98,7 @@ async function decryptMailKey(account, data) {
         params: [ct, account],
     });
 }
-```
 
-#### Read Mail
-Obtain encrypted data from the contract, intercept [0,112) or [112,224) bits of data in the encrypted data, and decrypt it into Mail Key.
 Then use the Mail Key to decrypt the content of the mail after 236 bits.
 ```
 const contract = MailContract(contract);
