@@ -98,7 +98,7 @@ async function decryptMailKey(account, data) {
         params: [ct, account],
     });
 }
-
+```
 Then use the Mail Key to decrypt the content of the mail after 236 bits.
 ```
 const contract = MailContract(contract);
