@@ -3,10 +3,10 @@
 ## Introduction
 W3Mail is a fully decentralized email service on the Web3Q chain. Users can send/receive email by wallet addresses, and the email contents are also stored on chain in plaintext or encrypted form. Plaintext emails can be sent to any address, while encrypted emails can only be sent to addresses that has registered the public key on chain.
    
-The official home page of the W3Mail project is https://web3q.io/w3mail.w3q/.
+W3Mail can be visited here: https://web3q.io/w3mail.w3q/.
 
 
-## How does it work?
+## How does it work
 W3Mail is a fully decentralized dApp which means the front-end code, back-end (smart contract) code and users' data (email content) are all stored on chain. 
 
 ### Front-end
@@ -15,7 +15,7 @@ The flow chart is as follows:
 
 #### w3mail.w3q
 [w3mail.w3q](https://web3q.io/w3ns.w3q/#/domains/w3mail.w3q) is a w3ns domain name, and the domain name corresponds to a FlatDirectory contract address, 
-front-end code is all stored in this contract.
+the front-end code is stored in this contract.
 
 FlatDirectory is the implementation of the web3 storage data contract. Click [here](https://docs.web3q.io/tutorials/migrate-your-website-to-web3q-in-5-mins) for details.
 
