@@ -16,7 +16,7 @@
         <el-footer class="footer">
           <div class="footer-layout">
             <el-row>
-              <a href="https://github.com/ethstorage/w3drive" target="_blank">
+              <a href="https://github.com/ethstorage/w3mail" target="_blank">
                 <img class="footer-img" src="@/assets/git.png">
               </a>
               <a href="https://twitter.com/EthStorage" target="_blank">
