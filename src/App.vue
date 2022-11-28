@@ -28,7 +28,7 @@
               <a href="https://t.me/ethstorage" target="_blank">
                 <img class="footer-img" src="@/assets/tel.png">
               </a>
-              <a href="https://discord.gg/mZqqUZxjed" target="_blank">
+              <a href="https://discord.gg/xhCwaMp7ps" target="_blank">
                 <img class="footer-img" src="@/assets/dis.png">
               </a>
             </el-row>
