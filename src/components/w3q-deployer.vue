@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import request from '@/utils/request';
+import {request, NotEnoughBalance} from '@/utils/request';
 
 const noop = () => {};
 
@@ -115,6 +115,12 @@ export default {
       this.onChange(file);
       this.onError(error, file);
       this.$notify.error({title: 'Upload', message: 'Upload Fail!'});
+      if (error instanceof NotEnoughBalance) {
+        this.$notify.error({
+          title: 'Not enough balance!',
+          message: 'File >=24kb requires staking token.'
+        });
+      }
     },
     handleSuccess(file, response) {
       file.status = 'success';

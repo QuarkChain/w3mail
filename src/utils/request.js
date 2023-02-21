@@ -26,7 +26,7 @@ const bufferChunk = (buffer, chunkSize) => {
   return result;
 }
 
-const request = async ({
+export const request = async ({
   driveKey,
   emailUuid,
   contractAddress,
@@ -35,6 +35,18 @@ const request = async ({
   onError,
   onProgress
 }) => {
+  let account;
+  try {
+    account = await window.ethereum.enable();
+    if (!account) {
+      onError(new Error("Can't get Account"));
+      return;
+    }
+  } catch (e) {
+    onError(new Error("Can't get Account"));
+    return;
+  }
+
   const fileUuid = uuidv4();
   const emailKey = await deriveFileKey(driveKey, emailUuid);
   // read file
@@ -64,6 +76,7 @@ const request = async ({
 
   const fileContract = FileContract(contractAddress);
   let uploadState = true;
+  let notEnoughBalance = false;
   for (const index in chunks) {
     const chunk = chunks[index];
     let cost = 0;
@@ -72,6 +85,14 @@ const request = async ({
     }
     const hexData = '0x' + chunk.toString('hex');
     try {
+      const balance = await fileContract.provider.getBalance(account[0]);
+      if(balance.lte(ethers.utils.parseEther(cost.toString()))){
+        // not enough balance
+        uploadState = false;
+        notEnoughBalance = true;
+        break;
+      }
+
       // file is remove or change
       const tx = await fileContract.writeChunk(hexUuid, hexName, index, hexData, {
         value: ethers.utils.parseEther(cost.toString())
@@ -91,8 +112,12 @@ const request = async ({
   if (uploadState) {
     onSuccess({ uuid: fileUuid});
   } else {
-    onError(new Error('upload request failed!'));
+    if (notEnoughBalance) {
+      onError(new NotEnoughBalance('Not enough balance'));
+    } else {
+      onError(new Error('upload request failed!'));
+    }
   }
 };
 
-export default request;
+export class NotEnoughBalance extends Error {}
