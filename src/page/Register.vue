@@ -74,7 +74,12 @@ export default {
         this.active = this.active + 1;
         this.$refs.carousel.setActiveItem(this.active);
       } else {
-        this.$message.error('Get Public Key Error');
+        this.$message({
+          duration: 10000,
+          showClose: true,
+          message: 'Current mobile wallet does not support retrieving public keys. You can use other supported mobile wallets (such as imToken) or use a desktop browser with Metamask.',
+          type: 'error'
+        });
       }
     },
     async onRegister() {
