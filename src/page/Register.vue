@@ -70,6 +70,15 @@ export default {
     async questPublicKey() {
       const key = await getPublicKey(this.account);
       if (key) {
+        if(key === 'User denied message EncryptionPublicKey') {
+          this.$message({
+            duration: 10000,
+            showClose: true,
+            message: 'User denied to provide public key',
+            type: 'error'
+          });
+          return;
+        }
         this.publicKey = key;
         this.active = this.active + 1;
         this.$refs.carousel.setActiveItem(this.active);
@@ -77,7 +86,7 @@ export default {
         this.$message({
           duration: 10000,
           showClose: true,
-          message: 'Current mobile wallet does not support retrieving public keys. You can use other supported mobile wallets (such as imToken) or use a desktop browser with Metamask.',
+          message: 'Current wallet does not support retrieving public keys. You can use other supported wallets or use a desktop browser with Metamask.',
           type: 'error'
         });
       }

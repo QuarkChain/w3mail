@@ -27,6 +27,9 @@ export async function getPublicKey(account) {
             params: [account],
         });
     } catch (e) {
+        if(e.message === 'MetaMask EncryptionPublicKey: User denied message EncryptionPublicKey.') {
+            return 'User denied message EncryptionPublicKey';
+        }
         return undefined;
     }
 }
